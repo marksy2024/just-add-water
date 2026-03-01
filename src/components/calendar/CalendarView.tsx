@@ -311,7 +311,7 @@ export function CalendarView({ initialPaddles, initialYear, initialMonth }: Cale
                               )}
                               {paddle.distance_km && (
                                 <span className="text-xs font-semibold text-atlantic-blue">
-                                  {paddle.distance_km.toFixed(1)}km
+                                  {Number(paddle.distance_km).toFixed(1)}km
                                 </span>
                               )}
                             </div>

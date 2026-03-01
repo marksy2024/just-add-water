@@ -1,0 +1,384 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// AUTH.JS REQUIRED MODELS
+// ============================================================
+
+model User {
+  id                   String    @id @default(uuid())
+  name                 String?
+  email                String    @unique
+  emailVerified        DateTime? @map("email_verified")
+  image                String?   @map("avatar_url")
+  stravaAthleteId      BigInt?   @map("strava_athlete_id")
+  stravaAccessToken    String?   @map("strava_access_token")
+  stravaRefreshToken   String?   @map("strava_refresh_token")
+  stravaTokenExpiresAt DateTime? @map("strava_token_expires_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+
+  accounts           Account[]
+  sessions           Session[]
+  invitesSent        Invite[]            @relation("inviter")
+  routesCreated      Route[]             @relation("routeCreator")
+  paddlesCreated     Paddle[]            @relation("paddleCreator")
+  paddleParticipants PaddleParticipant[]
+  paddleComments     PaddleComment[]
+  paddlePhotos       PaddlePhoto[]
+  routeComments      RouteComment[]
+  routePhotos        RoutePhoto[]
+  shuttleOffers      ShuttleOffer[]
+  badgesEarned       BadgeEarned[]
+  streak             UserStreak?
+  challengesCreated  Challenge[]         @relation("challengeCreator")
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String  @map("userId")
+  type              String
+  provider          String
+  providerAccountId String  @map("providerAccountId")
+  refresh_token     String?
+  access_token      String?
+  expires_at        BigInt?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique @map("sessionToken")
+  userId       String   @map("userId")
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ============================================================
+// INVITES
+// ============================================================
+
+model Invite {
+  id          String   @id @default(uuid())
+  token       String   @unique @default(uuid())
+  inviterId   String   @map("inviter_id")
+  inviteeEmail String? @map("invitee_email")
+  inviteeName  String? @map("invitee_name")
+  status      String   @default("pending") // pending, accepted, expired
+  createdAt   DateTime @default(now()) @map("created_at")
+  expiresAt   DateTime @map("expires_at")
+  acceptedAt  DateTime? @map("accepted_at")
+
+  inviter User @relation("inviter", fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@map("invites")
+}
+
+// ============================================================
+// ROUTES
+// ============================================================
+
+model Route {
+  id                 String   @id @default(uuid())
+  name               String
+  description        String?
+  type               String   // river, lake, coastal, canal
+  difficulty         String   @default("moderate") // easy, moderate, challenging
+  geojson            Json?
+  distanceKm         Decimal? @map("distance_km") @db.Decimal(6, 2)
+  putInLat           Decimal? @map("put_in_lat") @db.Decimal(9, 6)
+  putInLng           Decimal? @map("put_in_lng") @db.Decimal(9, 6)
+  putInDescription   String?  @map("put_in_description")
+  takeOutLat         Decimal? @map("take_out_lat") @db.Decimal(9, 6)
+  takeOutLng         Decimal? @map("take_out_lng") @db.Decimal(9, 6)
+  takeOutDescription String?  @map("take_out_description")
+  bestSeasonNotes    String?  @map("best_season_notes")
+  hubeauStationCode  String?  @map("hubeau_station_code")
+  minWaterLevelNotes String?  @map("min_water_level_notes")
+  createdBy          String?  @map("created_by")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at")
+
+  creator       User?          @relation("routeCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  paddles       Paddle[]
+  routeComments RouteComment[]
+  routePhotos   RoutePhoto[]
+
+  @@map("routes")
+}
+
+// ============================================================
+// PADDLES
+// ============================================================
+
+model Paddle {
+  id                 String   @id @default(uuid())
+  routeId            String?  @map("route_id")
+  title              String
+  date               DateTime @db.Date
+  status             String   @default("planned") // planned, active, completed
+  startTime          String?  @map("start_time")
+  endTime            String?  @map("end_time")
+  distanceKm         Decimal? @map("distance_km") @db.Decimal(6, 2)
+  notes              String?
+  weatherSnapshot    Json?    @map("weather_snapshot")
+  waterLevelSnapshot Json?    @map("water_level_snapshot")
+  createdBy          String?  @map("created_by")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  route        Route?              @relation(fields: [routeId], references: [id], onDelete: SetNull)
+  creator      User?               @relation("paddleCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  participants PaddleParticipant[]
+  comments     PaddleComment[]
+  photos       PaddlePhoto[]
+  shuttleOffers ShuttleOffer[]
+  floatPlans   FloatPlan[]
+  badgesEarned BadgeEarned[]
+
+  @@map("paddles")
+}
+
+// ============================================================
+// PADDLE PARTICIPANTS
+// ============================================================
+
+model PaddleParticipant {
+  id              String   @id @default(uuid())
+  paddleId        String   @map("paddle_id")
+  userId          String   @map("user_id")
+  role            String   @default("participant") // organiser, participant
+  rsvp            String   @default("going") // going, not_going, maybe
+  stravaActivityId String? @map("strava_activity_id")
+  distanceKm      Decimal? @map("distance_km") @db.Decimal(6, 2)
+  durationMinutes Int?     @map("duration_minutes")
+  joinedAt        DateTime @default(now()) @map("joined_at")
+
+  paddle Paddle @relation(fields: [paddleId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([paddleId, userId])
+  @@map("paddle_participants")
+}
+
+// ============================================================
+// PADDLE COMMENTS
+// ============================================================
+
+model PaddleComment {
+  id          String   @id @default(uuid())
+  paddleId    String   @map("paddle_id")
+  userId      String   @map("user_id")
+  text        String
+  commentType String   @default("general") @map("comment_type") // general, hazard, access, tip
+  locationLat Decimal? @map("location_lat") @db.Decimal(9, 6)
+  locationLng Decimal? @map("location_lng") @db.Decimal(9, 6)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  paddle Paddle @relation(fields: [paddleId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("paddle_comments")
+}
+
+// ============================================================
+// PADDLE PHOTOS
+// ============================================================
+
+model PaddlePhoto {
+  id           String   @id @default(uuid())
+  paddleId     String   @map("paddle_id")
+  userId       String   @map("user_id")
+  storageUrl   String   @map("storage_url")
+  thumbnailUrl String?  @map("thumbnail_url")
+  caption      String?
+  photoType    String   @default("general") @map("photo_type") // general, put_in, take_out, hazard, scenic
+  locationLat  Decimal? @map("location_lat") @db.Decimal(9, 6)
+  locationLng  Decimal? @map("location_lng") @db.Decimal(9, 6)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  paddle Paddle @relation(fields: [paddleId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("paddle_photos")
+}
+
+// ============================================================
+// ROUTE COMMENTS
+// ============================================================
+
+model RouteComment {
+  id          String   @id @default(uuid())
+  routeId     String   @map("route_id")
+  userId      String   @map("user_id")
+  text        String
+  commentType String   @default("general") @map("comment_type") // general, hazard, access, conditions, tip
+  pinned      Boolean  @default(false)
+  locationLat Decimal? @map("location_lat") @db.Decimal(9, 6)
+  locationLng Decimal? @map("location_lng") @db.Decimal(9, 6)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  route Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("route_comments")
+}
+
+// ============================================================
+// ROUTE PHOTOS
+// ============================================================
+
+model RoutePhoto {
+  id           String   @id @default(uuid())
+  routeId      String   @map("route_id")
+  userId       String   @map("user_id")
+  storageUrl   String   @map("storage_url")
+  thumbnailUrl String?  @map("thumbnail_url")
+  caption      String?
+  photoType    String   @default("scenic") @map("photo_type") // put_in, take_out, hazard, scenic, access, parking
+  locationLat  Decimal? @map("location_lat") @db.Decimal(9, 6)
+  locationLng  Decimal? @map("location_lng") @db.Decimal(9, 6)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  route Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("route_photos")
+}
+
+// ============================================================
+// SHUTTLE OFFERS
+// ============================================================
+
+model ShuttleOffer {
+  id                  String   @id @default(uuid())
+  paddleId            String   @map("paddle_id")
+  userId              String   @map("user_id")
+  seatsAvailable      Int      @default(1) @map("seats_available")
+  direction           String   // to_put_in, from_take_out, both
+  pickupLocationNotes String?  @map("pickup_location_notes")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  paddle Paddle @relation(fields: [paddleId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("shuttle_offers")
+}
+
+// ============================================================
+// FLOAT PLANS
+// ============================================================
+
+model FloatPlan {
+  id                    String    @id @default(uuid())
+  paddleId              String    @map("paddle_id")
+  expectedReturnTime    DateTime  @map("expected_return_time")
+  emergencyContactName  String    @map("emergency_contact_name")
+  emergencyContactPhone String    @map("emergency_contact_phone")
+  status                String    @default("active") // active, completed, overdue
+  activatedAt           DateTime  @default(now()) @map("activated_at")
+  completedAt           DateTime? @map("completed_at")
+
+  paddle Paddle @relation(fields: [paddleId], references: [id], onDelete: Cascade)
+
+  @@map("float_plans")
+}
+
+// ============================================================
+// CHALLENGES
+// ============================================================
+
+model Challenge {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  targetKm    Decimal  @map("target_km") @db.Decimal(7, 2)
+  month       Int
+  year        Int
+  routeFilter Json?    @map("route_filter")
+  status      String   @default("active") // active, completed, missed
+  finalKm     Decimal? @map("final_km") @db.Decimal(7, 2)
+  createdBy   String?  @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  creator User? @relation("challengeCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+
+  @@map("challenges")
+}
+
+// ============================================================
+// BADGES
+// ============================================================
+
+model BadgeDefinition {
+  id          String @id @default(uuid())
+  slug        String @unique
+  name        String
+  description String
+  icon        String
+  category    String // distance, count, streak, variety, challenge
+  criteria    Json
+  sortOrder   Int    @default(0) @map("sort_order")
+
+  earned BadgeEarned[]
+
+  @@map("badges_definitions")
+}
+
+model BadgeEarned {
+  id       String   @id @default(uuid())
+  userId   String   @map("user_id")
+  badgeId  String   @map("badge_id")
+  earnedAt DateTime @default(now()) @map("earned_at")
+  paddleId String?  @map("paddle_id")
+
+  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge  BadgeDefinition @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  paddle Paddle?         @relation(fields: [paddleId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, badgeId])
+  @@map("badges_earned")
+}
+
+// ============================================================
+// USER STREAKS
+// ============================================================
+
+model UserStreak {
+  userId             String  @id @map("user_id")
+  currentStreakWeeks Int     @default(0) @map("current_streak_weeks")
+  longestStreakWeeks Int     @default(0) @map("longest_streak_weeks")
+  streakStartDate    DateTime? @map("streak_start_date") @db.Date
+  lastPaddleWeek     String? @map("last_paddle_week")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_streaks")
+}

@@ -1,0 +1,164 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+:root {
+  /* Marine Colour Palette */
+  --deep-ocean: #0C4A6E;
+  --atlantic-blue: #0284C7;
+  --shallows: #38BDF8;
+  --sea-foam: #CCFBF1;
+  --driftwood: #78716C;
+  --sand: #FAFAF9;
+  --salt-white: #FFFFFF;
+  --sunset-coral: #F97316;
+  --storm-grey: #475569;
+  --kelp-green: #059669;
+  --amber-buoy: #D97706;
+  --red-flag: #DC2626;
+
+  /* Paddle type colours */
+  --paddle-river: #0C4A6E;
+  --paddle-lake: #0284C7;
+  --paddle-coastal: #38BDF8;
+  --paddle-canal: #059669;
+}
+
+@theme inline {
+  --color-deep-ocean: var(--deep-ocean);
+  --color-atlantic-blue: var(--atlantic-blue);
+  --color-shallows: var(--shallows);
+  --color-sea-foam: var(--sea-foam);
+  --color-driftwood: var(--driftwood);
+  --color-sand: var(--sand);
+  --color-salt-white: var(--salt-white);
+  --color-sunset-coral: var(--sunset-coral);
+  --color-storm-grey: var(--storm-grey);
+  --color-kelp-green: var(--kelp-green);
+  --color-amber-buoy: var(--amber-buoy);
+  --color-red-flag: var(--red-flag);
+
+  --color-paddle-river: var(--paddle-river);
+  --color-paddle-lake: var(--paddle-lake);
+  --color-paddle-coastal: var(--paddle-coastal);
+  --color-paddle-canal: var(--paddle-canal);
+
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background: var(--sand);
+  color: var(--storm-grey);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Stat numbers — satisfying to look at */
+.stat-number {
+  font-weight: 600;
+  color: var(--atlantic-blue);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cards — smooth river stone corners */
+.card {
+  background: var(--salt-white);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(12, 74, 110, 0.06), 0 1px 2px rgba(12, 74, 110, 0.04);
+  transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(12, 74, 110, 0.08), 0 2px 4px rgba(12, 74, 110, 0.04);
+}
+
+/* Progress bar — water channel gradient */
+.progress-bar {
+  background: linear-gradient(90deg, var(--deep-ocean), var(--atlantic-blue), var(--shallows));
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Water ripple loading animation */
+@keyframes ripple {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+.ripple-loader {
+  position: relative;
+  width: 48px;
+  height: 48px;
+}
+
+.ripple-loader::before,
+.ripple-loader::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--atlantic-blue);
+  animation: ripple 1.6s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+
+.ripple-loader::after {
+  animation-delay: 0.5s;
+}
+
+/* Splash animation for paddle logging */
+@keyframes splash {
+  0% { transform: scale(0.5); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.6; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+/* Badge earn animation */
+@keyframes badge-rise {
+  0% { transform: translateY(20px); opacity: 0; }
+  60% { transform: translateY(-4px); opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.badge-earned {
+  animation: badge-rise 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Type badge pills */
+.type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.type-badge-river { background: #0C4A6E20; color: var(--deep-ocean); }
+.type-badge-lake { background: #0284C720; color: var(--atlantic-blue); }
+.type-badge-coastal { background: #38BDF820; color: #0369A1; }
+.type-badge-canal { background: #05966920; color: var(--kelp-green); }
+
+/* Difficulty badges */
+.difficulty-easy { color: var(--kelp-green); }
+.difficulty-moderate { color: var(--amber-buoy); }
+.difficulty-challenging { color: var(--red-flag); }
+
+/* Hazard comment styling */
+.comment-hazard {
+  border-left: 3px solid var(--sunset-coral);
+  background: #FFF7ED;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+/* Safe area padding for PWA */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+}

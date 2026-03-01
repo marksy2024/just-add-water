@@ -1,11 +1,12 @@
 'use client'
 
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { TypeBadge, DifficultyBadge } from '@/components/ui/Badge'
 import { Ruler, Navigation, ExternalLink, Droplets, CalendarDays } from 'lucide-react'
 import type { WaterLevelData } from '@/lib/water-level'
 import { trendIcon, trendColor, formatWaterLevel } from '@/lib/water-level'
+
 interface DiscoverRoute {
   id: string
   name: string
@@ -25,12 +26,13 @@ interface DiscoverCardProps {
 }
 
 export function DiscoverCard({ route, waterLevel }: DiscoverCardProps) {
+  const router = useRouter()
   const lat = route.putInLat
   const lng = route.putInLng
   const mapsUrl = lat && lng ? `https://www.google.com/maps?q=${lat},${lng}` : null
 
   return (
-    <Link href={`/routes/${route.id}`}>
+    <div onClick={() => router.push(`/routes/${route.id}`)} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/routes/${route.id}`) }}>
       <Card hover className="space-y-2">
         {/* Row 1: Name + badges */}
         <div className="flex items-center gap-2 flex-wrap">
@@ -104,6 +106,6 @@ export function DiscoverCard({ route, waterLevel }: DiscoverCardProps) {
           )}
         </div>
       </Card>
-    </Link>
+    </div>
   )
 }

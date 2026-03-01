@@ -384,8 +384,8 @@ export default async function PaddleDetailPage({ params }: PageProps) {
         )}
       </section>
 
-      {/* Food Section (single-day paddles only) */}
-      {!paddle.endDate && (
+      {/* Food Section (single-day planned/active paddles only) */}
+      {!paddle.endDate && paddle.status !== 'completed' && (
         <>
           <WaveDividerSubtle />
           <section>

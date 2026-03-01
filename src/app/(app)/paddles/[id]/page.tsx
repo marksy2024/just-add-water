@@ -8,6 +8,8 @@ import { WaveDividerSubtle } from '@/components/ui/WaveDivider'
 import { RSVPButtons } from '@/components/paddles/RSVPButtons'
 import { FloatPlanCard } from '@/components/paddles/FloatPlanCard'
 import { FloatPlanForm } from '@/components/paddles/FloatPlanForm'
+import { PaddlePhotos } from '@/components/paddles/PaddlePhotos'
+import { AddParticipants } from '@/components/paddles/AddParticipants'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { RouteMap } from '@/components/maps/RouteMap'
@@ -21,7 +23,6 @@ import {
   Users,
   Car,
   MessageCircle,
-  Camera,
   StickyNote,
   AlertTriangle,
 } from 'lucide-react'
@@ -43,6 +44,7 @@ export default async function PaddleDetailPage({ params }: PageProps) {
     photos,
     shuttleOffers,
     floatPlan,
+    allUsers,
   ] = await Promise.all([
     prisma.paddle.findUnique({
       where: { id },
@@ -80,6 +82,9 @@ export default async function PaddleDetailPage({ params }: PageProps) {
     }),
     prisma.paddlePhoto.findMany({
       where: { paddleId: id },
+      include: {
+        user: { select: { name: true } },
+      },
       orderBy: { createdAt: 'asc' },
     }),
     prisma.shuttleOffer.findMany({
@@ -93,6 +98,10 @@ export default async function PaddleDetailPage({ params }: PageProps) {
       where: { paddleId: id, status: { in: ['active', 'overdue'] } },
       orderBy: { activatedAt: 'desc' },
     }),
+    prisma.user.findMany({
+      select: { id: true, name: true, email: true },
+      orderBy: { name: 'asc' },
+    }),
   ])
 
   if (!paddle) notFound()
@@ -103,6 +112,8 @@ export default async function PaddleDetailPage({ params }: PageProps) {
   const maybeParticipants = participants.filter((p) => p.rsvp === 'maybe')
   const currentUserParticipant = participants.find((p) => p.userId === userId)
   const organiser = participants.find((p) => p.role === 'organiser')
+  const isOrganiser = organiser?.userId === userId
+  const participantUserIds = participants.map((p) => p.userId)
 
   // Check if shuttle is needed (put-in and take-out differ)
   const needsShuttle = route &&
@@ -354,6 +365,13 @@ export default async function PaddleDetailPage({ params }: PageProps) {
             </div>
           </div>
         )}
+        {isOrganiser && (
+          <AddParticipants
+            paddleId={paddle.id}
+            allUsers={allUsers}
+            participantUserIds={participantUserIds}
+          />
+        )}
       </section>
 
       {/* Shuttle Section */}
@@ -475,36 +493,21 @@ export default async function PaddleDetailPage({ params }: PageProps) {
       </section>
 
       {/* Photos Gallery */}
-      {photos.length > 0 && (
-        <>
-          <WaveDividerSubtle />
-          <section>
-            <div className="flex items-center gap-2 mb-3">
-              <Camera className="w-4 h-4 text-atlantic-blue" />
-              <h2 className="text-sm font-semibold text-driftwood uppercase tracking-wide">
-                Photos ({photos.length})
-              </h2>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {photos.map((photo) => (
-                <a
-                  key={photo.id}
-                  href={photo.storageUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="aspect-square rounded-xl overflow-hidden bg-storm-grey/10"
-                >
-                  <img
-                    src={photo.thumbnailUrl || photo.storageUrl}
-                    alt={photo.caption || 'Paddle photo'}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
-                  />
-                </a>
-              ))}
-            </div>
-          </section>
-        </>
-      )}
+      <WaveDividerSubtle />
+      <section>
+        <PaddlePhotos
+          paddleId={paddle.id}
+          initialPhotos={photos.map((p) => ({
+            id: p.id,
+            storage_url: p.storageUrl,
+            thumbnail_url: p.thumbnailUrl,
+            caption: p.caption,
+            photo_type: p.photoType,
+            created_at: p.createdAt.toISOString(),
+            users: p.user ? { name: p.user.name || 'Unknown' } : null,
+          }))}
+        />
+      </section>
 
       {/* Notes */}
       {paddle.notes && (

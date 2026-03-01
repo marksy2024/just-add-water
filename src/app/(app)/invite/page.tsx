@@ -4,16 +4,14 @@ import { useState } from 'react'
 import { Card, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
-import { WhatsAppShare } from '@/components/ui/WhatsAppShare'
-import { UserPlus, Copy, Check, Send } from 'lucide-react'
+import { UserPlus, Check, Send } from 'lucide-react'
 
 export default function InvitePage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [inviteLink, setInviteLink] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
+  const [success, setSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,7 +22,7 @@ export default function InvitePage() {
       const res = await fetch('/api/invites', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), email: email.trim() || undefined }),
+        body: JSON.stringify({ name: name.trim(), email: email.trim() }),
       })
 
       if (!res.ok) {
@@ -32,8 +30,7 @@ export default function InvitePage() {
         throw new Error(data.error || 'Failed to create invite')
       }
 
-      const data = await res.json()
-      setInviteLink(data.inviteLink)
+      setSuccess(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -41,23 +38,11 @@ export default function InvitePage() {
     }
   }
 
-  const handleCopy = async () => {
-    if (!inviteLink) return
-    try {
-      await navigator.clipboard.writeText(inviteLink)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      // Fallback: select the text
-    }
-  }
-
   const handleReset = () => {
     setName('')
     setEmail('')
-    setInviteLink(null)
+    setSuccess(false)
     setError(null)
-    setCopied(false)
   }
 
   return (
@@ -70,7 +55,7 @@ export default function InvitePage() {
         </p>
       </div>
 
-      {!inviteLink ? (
+      {!success ? (
         /* Invite Form */
         <Card>
           <div className="flex items-center gap-2 mb-4">
@@ -87,11 +72,12 @@ export default function InvitePage() {
               required
             />
             <Input
-              label="Email (optional)"
+              label="Email"
               type="email"
               placeholder="marie@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
             />
 
             {error && (
@@ -100,62 +86,28 @@ export default function InvitePage() {
 
             <Button type="submit" loading={loading} className="w-full">
               <Send className="w-4 h-4" />
-              Create Invite Link
+              Send Invite
             </Button>
           </form>
         </Card>
       ) : (
-        /* Invite Created — show link */
+        /* Success */
         <div className="space-y-4">
           <Card>
-            <div className="text-center mb-4">
+            <div className="text-center">
               <div className="w-12 h-12 rounded-full bg-kelp-green/10 flex items-center justify-center mx-auto mb-3">
                 <Check className="w-6 h-6 text-kelp-green" />
               </div>
-              <CardTitle>Invite Created</CardTitle>
+              <CardTitle>Invite Sent</CardTitle>
               <p className="text-sm text-driftwood mt-1">
-                Share this link with {name} to invite them to the group
+                Account created for {name}. Login details have been emailed to them.
               </p>
             </div>
-
-            {/* Invite Link */}
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-sand">
-              <input
-                type="text"
-                readOnly
-                value={inviteLink}
-                className="flex-1 text-sm text-storm-grey bg-transparent outline-none truncate"
-              />
-              <button
-                onClick={handleCopy}
-                className="shrink-0 p-2 rounded-lg hover:bg-storm-grey/10 transition-colors"
-                aria-label="Copy link"
-              >
-                {copied ? (
-                  <Check className="w-4 h-4 text-kelp-green" />
-                ) : (
-                  <Copy className="w-4 h-4 text-storm-grey" />
-                )}
-              </button>
-            </div>
-
-            {copied && (
-              <p className="text-xs text-kelp-green text-center mt-1">Copied to clipboard</p>
-            )}
           </Card>
 
-          {/* Share Options */}
-          <div className="flex flex-col gap-3">
-            <WhatsAppShare
-              message={`Hey! Join our paddling group on Just Add Water \u{1F6F6}\n${inviteLink}`}
-              buttonText="Share via WhatsApp"
-              variant="primary"
-              size="md"
-            />
-            <Button variant="outline" onClick={handleReset} className="w-full">
-              Invite someone else
-            </Button>
-          </div>
+          <Button variant="outline" onClick={handleReset} className="w-full">
+            Invite someone else
+          </Button>
         </div>
       )}
     </div>

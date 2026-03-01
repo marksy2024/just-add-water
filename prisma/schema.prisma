@@ -17,6 +17,7 @@ model User {
   email                String    @unique
   emailVerified        DateTime? @map("email_verified")
   image                String?   @map("avatar_url")
+  passwordHash         String?   @map("password_hash")
   stravaAthleteId      BigInt?   @map("strava_athlete_id")
   stravaAccessToken    String?   @map("strava_access_token")
   stravaRefreshToken   String?   @map("strava_refresh_token")
@@ -37,6 +38,7 @@ model User {
   badgesEarned       BadgeEarned[]
   streak             UserStreak?
   challengesCreated  Challenge[]         @relation("challengeCreator")
+  foodAllocations    FoodAllocation[]
 
   @@map("users")
 }
@@ -143,6 +145,7 @@ model Paddle {
   routeId            String?  @map("route_id")
   title              String
   date               DateTime @db.Date
+  endDate            DateTime? @map("end_date") @db.Date
   status             String   @default("planned") // planned, active, completed
   startTime          String?  @map("start_time")
   endTime            String?  @map("end_time")
@@ -159,8 +162,9 @@ model Paddle {
   comments     PaddleComment[]
   photos       PaddlePhoto[]
   shuttleOffers ShuttleOffer[]
-  floatPlans   FloatPlan[]
-  badgesEarned BadgeEarned[]
+  floatPlans      FloatPlan[]
+  badgesEarned    BadgeEarned[]
+  foodAllocations FoodAllocation[]
 
   @@map("paddles")
 }
@@ -381,4 +385,22 @@ model UserStreak {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_streaks")
+}
+
+// ============================================================
+// FOOD ALLOCATIONS
+// ============================================================
+
+model FoodAllocation {
+  id        String   @id @default(uuid())
+  paddleId  String   @map("paddle_id")
+  userId    String   @map("user_id")
+  category  String   // bread, main, dessert, snacks, drinks
+  createdAt DateTime @default(now()) @map("created_at")
+
+  paddle Paddle @relation(fields: [paddleId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([paddleId, userId, category])
+  @@map("food_allocations")
 }

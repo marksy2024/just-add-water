@@ -1,24 +1,79 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { signIn } from 'next-auth/react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { WaveDivider } from '@/components/ui/WaveDivider'
 
-export default function LoginPage() {
+function LoginForm() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get('callbackUrl') || '/'
+
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [sent, setSent] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    await signIn('email', { email, redirect: false })
-    setSent(true)
-    setLoading(false)
+    setError(null)
+
+    const result = await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+    })
+
+    if (result?.error) {
+      setError('Invalid email or password')
+      setLoading(false)
+    } else {
+      router.push(callbackUrl)
+    }
   }
 
+  return (
+    <form onSubmit={handleSubmit} className="card p-6 space-y-4">
+      <Input
+        label="Email address"
+        type="text"
+        inputMode="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value.trim())}
+        placeholder="you@example.com"
+        required
+        autoFocus
+        autoComplete="email"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
+      />
+      <Input
+        label="Password"
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Your password"
+        required
+        autoComplete="current-password"
+      />
+
+      {error && (
+        <p className="text-sm text-red-flag text-center">{error}</p>
+      )}
+
+      <Button type="submit" loading={loading} disabled={!email || !password} className="w-full" size="lg">
+        Sign In
+      </Button>
+    </form>
+  )
+}
+
+export default function LoginPage() {
   return (
     <div className="min-h-dvh flex flex-col bg-deep-ocean">
       <div className="flex-1 flex items-center justify-center p-6">
@@ -29,45 +84,9 @@ export default function LoginPage() {
             <p className="text-shallows/80 text-sm">Your paddling group companion</p>
           </div>
 
-          {sent ? (
-            <div className="card p-6 text-center">
-              <div className="text-3xl mb-3">📧</div>
-              <h2 className="text-lg font-bold text-deep-ocean mb-2">Check your email</h2>
-              <p className="text-sm text-driftwood mb-4">
-                We sent a magic link to <strong className="text-storm-grey">{email}</strong>.
-                Click the link to sign in.
-              </p>
-              <button
-                onClick={() => { setSent(false); setEmail('') }}
-                className="text-sm text-atlantic-blue hover:underline"
-              >
-                Use a different email
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="card p-6 space-y-4">
-              <Input
-                label="Email address"
-                type="text"
-                inputMode="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value.trim())}
-                placeholder="you@example.com"
-                required
-                autoFocus
-                autoComplete="email"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-              />
-              <Button type="submit" loading={loading} disabled={!email} className="w-full" size="lg">
-                Send Magic Link
-              </Button>
-              <p className="text-xs text-driftwood text-center">
-                No password needed — we&apos;ll email you a sign-in link
-              </p>
-            </form>
-          )}
+          <Suspense>
+            <LoginForm />
+          </Suspense>
         </div>
       </div>
 

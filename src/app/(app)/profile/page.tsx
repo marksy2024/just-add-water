@@ -4,6 +4,8 @@ import { formatDate, formatDistance, formatDuration } from '@/lib/utils'
 import { Card, CardTitle } from '@/components/ui/Card'
 import { WaveDividerSubtle } from '@/components/ui/WaveDivider'
 import { SignOutButton } from '@/components/profile/SignOutButton'
+import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload'
+import { ChangePassword } from '@/components/profile/ChangePassword'
 import { StravaConnect } from '@/components/profile/StravaConnect'
 import { getStravaAuthUrl } from '@/lib/strava'
 import Link from 'next/link'
@@ -123,11 +125,7 @@ export default async function ProfilePage() {
     <div className="space-y-6">
       {/* Profile Header */}
       <div className="flex items-center gap-4">
-        <div
-          className={`w-16 h-16 rounded-full ${colorClass} flex items-center justify-center shrink-0`}
-        >
-          <span className="text-white font-bold text-2xl">{initial}</span>
-        </div>
+        <ProfilePhotoUpload currentImage={user?.image || null} userName={userName} />
         <div>
           <h1 className="text-2xl font-extrabold text-deep-ocean">{userName}</h1>
           <p className="text-sm text-driftwood">{userEmail}</p>
@@ -263,6 +261,11 @@ export default async function ProfilePage() {
           })}
         </div>
       </div>
+
+      <WaveDividerSubtle />
+
+      {/* Change Password */}
+      <ChangePassword />
 
       <WaveDividerSubtle />
 

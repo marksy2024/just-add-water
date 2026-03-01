@@ -17,12 +17,14 @@ export async function POST(req: NextRequest) {
     const {
       title,
       date,
+      end_date,
       route_id,
       status = 'completed',
       start_time,
       distance_km,
       duration_minutes,
       notes,
+      participant_ids,
     } = body
 
     // Validate required fields
@@ -40,11 +42,20 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Validate end_date if provided
+    if (end_date && new Date(end_date) < new Date(date)) {
+      return NextResponse.json(
+        { error: 'End date must be on or after start date' },
+        { status: 400 }
+      )
+    }
+
     // Create the paddle
     const paddle = await prisma.paddle.create({
       data: {
         title: title.trim(),
         date: new Date(date),
+        endDate: end_date ? new Date(end_date) : null,
         routeId: route_id || null,
         status,
         startTime: start_time || null,
@@ -78,6 +89,26 @@ export async function POST(req: NextRequest) {
     } catch (participantErr) {
       console.error('Error adding participant:', participantErr)
       // Paddle was created but participant failed; still return paddle
+    }
+
+    // Add additional participants if provided
+    if (Array.isArray(participant_ids) && participant_ids.length > 0) {
+      const idsToAdd = participant_ids.filter((id: string) => id !== userId)
+      if (idsToAdd.length > 0) {
+        try {
+          await prisma.paddleParticipant.createMany({
+            data: idsToAdd.map((id: string) => ({
+              paddleId: paddle.id,
+              userId: id,
+              role: 'participant',
+              rsvp: 'going',
+            })),
+            skipDuplicates: true,
+          })
+        } catch (e) {
+          console.error('Error adding participants:', e)
+        }
+      }
     }
 
     // If logging a completed paddle, update streak and check badges

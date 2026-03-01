@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { formatDate, formatDuration, formatDistance } from '@/lib/utils'
+import { formatDate, formatDateRange, formatDuration, formatDistance } from '@/lib/utils'
 import { Card } from '@/components/ui/Card'
 import { TypeBadge, StatusBadge, CommentTypeBadge } from '@/components/ui/Badge'
 import { WhatsAppShare } from '@/components/ui/WhatsAppShare'
@@ -10,6 +10,7 @@ import { FloatPlanCard } from '@/components/paddles/FloatPlanCard'
 import { FloatPlanForm } from '@/components/paddles/FloatPlanForm'
 import { PaddlePhotos } from '@/components/paddles/PaddlePhotos'
 import { AddParticipants } from '@/components/paddles/AddParticipants'
+import { FoodSection } from '@/components/paddles/FoodSection'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { RouteMap } from '@/components/maps/RouteMap'
@@ -22,6 +23,7 @@ import {
   Timer,
   Users,
   Car,
+  UtensilsCrossed,
   MessageCircle,
   StickyNote,
   AlertTriangle,
@@ -45,6 +47,7 @@ export default async function PaddleDetailPage({ params }: PageProps) {
     shuttleOffers,
     floatPlan,
     allUsers,
+    foodAllocations,
   ] = await Promise.all([
     prisma.paddle.findUnique({
       where: { id },
@@ -102,6 +105,11 @@ export default async function PaddleDetailPage({ params }: PageProps) {
       select: { id: true, name: true, email: true },
       orderBy: { name: 'asc' },
     }),
+    prisma.foodAllocation.findMany({
+      where: { paddleId: id },
+      select: { id: true, userId: true, category: true },
+      orderBy: { createdAt: 'asc' },
+    }),
   ])
 
   if (!paddle) notFound()
@@ -132,7 +140,7 @@ export default async function PaddleDetailPage({ params }: PageProps) {
   const whatsappMessage = [
     `\u{1F6F6} ${paddle.title}`,
     route ? `\u{1F4CD} ${route.name}` : '',
-    `\u{1F4C5} ${formatDate(paddle.date)}${timeStr ? `, ${timeStr}` : ''}`,
+    `\u{1F4C5} ${paddle.endDate ? formatDateRange(paddle.date, paddle.endDate) : formatDate(paddle.date)}${timeStr ? `, ${timeStr}` : ''}`,
     paddle.distanceKm ? `\u{1F4CF} ${Number(paddle.distanceKm)}km` : '',
     `\u{1F449} ${appLink}`,
   ].filter(Boolean).join('\n')
@@ -160,7 +168,9 @@ export default async function PaddleDetailPage({ params }: PageProps) {
             <div className="flex items-center gap-3 text-sm text-driftwood flex-wrap">
               <span className="flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5" />
-                {formatDate(paddle.date)}
+                {paddle.endDate
+                  ? formatDateRange(paddle.date, paddle.endDate)
+                  : formatDate(paddle.date)}
               </span>
               {paddle.startTime && (
                 <span className="flex items-center gap-1">
@@ -373,6 +383,31 @@ export default async function PaddleDetailPage({ params }: PageProps) {
           />
         )}
       </section>
+
+      {/* Food Section (single-day paddles only) */}
+      {!paddle.endDate && (
+        <>
+          <WaveDividerSubtle />
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <UtensilsCrossed className="w-4 h-4 text-atlantic-blue" />
+              <h2 className="text-sm font-semibold text-driftwood uppercase tracking-wide">
+                Food
+              </h2>
+            </div>
+            <FoodSection
+              paddleId={paddle.id}
+              isOrganiser={isOrganiser}
+              participants={goingParticipants.map((p) => ({
+                userId: p.userId,
+                userName: p.user?.name || 'Unknown',
+                userImage: p.user?.image || null,
+              }))}
+              initialAllocations={foodAllocations}
+            />
+          </section>
+        </>
+      )}
 
       {/* Shuttle Section */}
       {needsShuttle && (

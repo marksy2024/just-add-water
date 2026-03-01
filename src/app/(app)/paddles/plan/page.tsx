@@ -8,7 +8,8 @@ import { Card } from '@/components/ui/Card'
 import { WhatsAppShare } from '@/components/ui/WhatsAppShare'
 import Link from 'next/link'
 import { ArrowLeft, CheckCircle, Calendar, Users } from 'lucide-react'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatDateShort } from '@/lib/utils'
+import { PaddlerPicker } from '@/components/paddles/PaddlerPicker'
 
 interface Route {
   id: string
@@ -17,9 +18,16 @@ interface Route {
   distanceKm: number | null
 }
 
+interface AppUser {
+  id: string
+  name: string | null
+  email: string
+}
+
 export default function PlanPaddlePage() {
   const router = useRouter()
   const [routes, setRoutes] = useState<Route[]>([])
+  const [allUsers, setAllUsers] = useState<AppUser[]>([])
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [createdPaddleId, setCreatedPaddleId] = useState<string | null>(null)
@@ -28,25 +36,33 @@ export default function PlanPaddlePage() {
   // Form state
   const [title, setTitle] = useState('')
   const [date, setDate] = useState('')
+  const [numberOfDays, setNumberOfDays] = useState('1')
   const [routeId, setRouteId] = useState('')
   const [startTime, setStartTime] = useState('')
   const [notes, setNotes] = useState('')
+  const [selectedPaddlerIds, setSelectedPaddlerIds] = useState<string[]>([])
 
   // Store for success screen
   const [createdPaddleDetails, setCreatedPaddleDetails] = useState<{
     routeName: string
     date: string
+    endDate: string | null
     startTime: string
     distance: number | null
   } | null>(null)
 
   useEffect(() => {
-    async function fetchRoutes() {
-      const res = await fetch('/api/routes')
-      const data = await res.json()
-      if (data) setRoutes(data)
+    async function fetchData() {
+      const [routesRes, usersRes] = await Promise.all([
+        fetch('/api/routes'),
+        fetch('/api/users'),
+      ])
+      const routesData = await routesRes.json()
+      if (routesData) setRoutes(routesData)
+      const usersData = await usersRes.json()
+      if (usersData?.users) setAllUsers(usersData.users)
     }
-    fetchRoutes()
+    fetchData()
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,6 +72,15 @@ export default function PlanPaddlePage() {
 
     const selectedRoute = routes.find((r) => r.id === routeId)
 
+    // Compute end_date for multi-day trips
+    const days = parseInt(numberOfDays, 10)
+    let endDate: string | null = null
+    if (days > 1 && date) {
+      const d = new Date(date)
+      d.setDate(d.getDate() + days - 1)
+      endDate = d.toISOString().split('T')[0]
+    }
+
     try {
       const res = await fetch('/api/paddles', {
         method: 'POST',
@@ -63,11 +88,13 @@ export default function PlanPaddlePage() {
         body: JSON.stringify({
           title: title.trim(),
           date,
+          end_date: endDate,
           route_id: routeId && routeId !== 'other' ? routeId : null,
           status: 'planned',
           start_time: startTime || null,
           distance_km: selectedRoute?.distanceKm || null,
           notes: notes.trim() || null,
+          participant_ids: selectedPaddlerIds.length > 0 ? selectedPaddlerIds : undefined,
         }),
       })
 
@@ -81,6 +108,7 @@ export default function PlanPaddlePage() {
       setCreatedPaddleDetails({
         routeName: selectedRoute?.name || title.trim(),
         date,
+        endDate,
         startTime,
         distance: selectedRoute?.distanceKm || null,
       })
@@ -101,10 +129,14 @@ export default function PlanPaddlePage() {
       ? `\n\u{1F4CF} ${createdPaddleDetails.distance}km`
       : ''
 
+    const dateDisplay = createdPaddleDetails.endDate
+      ? `${formatDateShort(createdPaddleDetails.date)} \u2013 ${formatDate(createdPaddleDetails.endDate)}`
+      : formatDate(createdPaddleDetails.date)
+
     const whatsappMessage = [
       '\u{1F6F6} Paddle proposed!',
       `\u{1F4CD} ${createdPaddleDetails.routeName}`,
-      `\u{1F4C5} ${formatDate(createdPaddleDetails.date)}${timeStr ? `, ${timeStr}` : ''}`,
+      `\u{1F4C5} ${dateDisplay}${timeStr ? `, ${timeStr}` : ''}`,
       distStr ? `\u{1F4CF} ${createdPaddleDetails.distance}km` : '',
       `\u{1F449} Details & RSVP: ${appLink}`,
     ].filter(Boolean).join('\n')
@@ -219,6 +251,16 @@ export default function PlanPaddlePage() {
               required
             />
 
+            <Select
+              label="Number of Days"
+              options={Array.from({ length: 14 }, (_, i) => ({
+                value: String(i + 1),
+                label: i === 0 ? '1 day' : `${i + 1} days`,
+              }))}
+              value={numberOfDays}
+              onChange={(e) => setNumberOfDays(e.target.value)}
+            />
+
             <Input
               label="Meeting Time"
               type="time"
@@ -234,6 +276,16 @@ export default function PlanPaddlePage() {
             />
           </div>
         </Card>
+
+        {allUsers.length > 0 && (
+          <Card>
+            <PaddlerPicker
+              allUsers={allUsers}
+              selectedIds={selectedPaddlerIds}
+              onChange={setSelectedPaddlerIds}
+            />
+          </Card>
+        )}
 
         <Button type="submit" loading={loading} className="w-full" size="lg">
           <Calendar className="w-5 h-5" />

@@ -2,12 +2,12 @@ import { prisma } from '@/lib/db'
 import { getWeather, weatherCodeToIcon, weatherCodeToLabel, windDirectionLabel } from '@/lib/weather'
 import { getWaterLevel } from '@/lib/water-level'
 import { getSunTimes, formatTime } from '@/lib/sun'
-import { assessConditions, type ConditionLevel } from '@/lib/conditions'
+import { rankRoutes, type RouteScoreInput } from '@/lib/route-scoring'
 import { Card, CardTitle } from '@/components/ui/Card'
 import { WaveDividerSubtle } from '@/components/ui/WaveDivider'
 import { ConditionsCard } from '@/components/routes/ConditionsCard'
-import Link from 'next/link'
-import { Thermometer, Wind, Sunrise, Sunset, AlertTriangle, MapPin, ThumbsUp } from 'lucide-react'
+import { RouteSuggestions } from '@/components/routes/RouteSuggestions'
+import { Wind, Sunrise, Sunset, AlertTriangle, MapPin } from 'lucide-react'
 
 // Vendee centroid for regional overview
 const VENDEE_LAT = 46.67
@@ -29,6 +29,10 @@ export default async function ConditionsPage() {
         distanceKm: true,
         putInLat: true,
         putInLng: true,
+        takeOutLat: true,
+        takeOutLng: true,
+        geojson: true,
+        bestSeasonNotes: true,
         hubeauStationCode: true,
       },
       orderBy: { name: 'asc' },
@@ -162,12 +166,12 @@ export default async function ConditionsPage() {
         </Card>
       )}
 
-      {/* Best Paddle Today */}
+      {/* Suggested Paddles — ranked top 3 */}
       {await (async () => {
         if (conditionsRoutes.length === 0) return null
 
-        // Assess conditions for each route to find the best
-        const assessments = await Promise.all(
+        // Fetch weather + water level per route in parallel
+        const routeData = await Promise.all(
           conditionsRoutes.map(async (route) => {
             try {
               const lat = Number(route.putInLat) || VENDEE_LAT
@@ -176,47 +180,34 @@ export default async function ConditionsPage() {
                 getWeather(lat, lng),
                 route.hubeauStationCode ? getWaterLevel(route.hubeauStationCode) : Promise.resolve(null),
               ])
-              const w = routeWeather.status === 'fulfilled' ? routeWeather.value : null
-              const wl = routeWater.status === 'fulfilled' ? routeWater.value : null
-              const assessment = w ? assessConditions(w.current, wl) : null
-              return { route, assessment }
+              return {
+                route: {
+                  id: route.id,
+                  name: route.name,
+                  type: route.type,
+                  distanceKm: route.distanceKm ? Number(route.distanceKm) : null,
+                  putInLat: route.putInLat ? Number(route.putInLat) : null,
+                  putInLng: route.putInLng ? Number(route.putInLng) : null,
+                  takeOutLat: route.takeOutLat ? Number(route.takeOutLat) : null,
+                  takeOutLng: route.takeOutLng ? Number(route.takeOutLng) : null,
+                  geojson: route.geojson,
+                  bestSeasonNotes: route.bestSeasonNotes,
+                },
+                weather: routeWeather.status === 'fulfilled' ? routeWeather.value : null,
+                waterLevel: routeWater.status === 'fulfilled' ? routeWater.value : null,
+                sunTimes,
+              } as RouteScoreInput
             } catch {
-              return { route, assessment: null }
+              return null
             }
           })
         )
 
-        const levelScore: Record<ConditionLevel, number> = { green: 3, amber: 2, red: 1 }
-        const best = assessments
-          .filter((a) => a.assessment)
-          .sort((a, b) => (levelScore[b.assessment!.level] || 0) - (levelScore[a.assessment!.level] || 0))[0]
+        const validInputs = routeData.filter((d): d is RouteScoreInput => d !== null)
+        const ranked = rankRoutes(validInputs)
+        const top3 = ranked.slice(0, 3)
 
-        if (!best?.assessment || best.assessment.level === 'red') return null
-
-        const levelColors = {
-          green: 'border-kelp-green/30 bg-kelp-green/5',
-          amber: 'border-amber-buoy/30 bg-amber-buoy/5',
-          red: '',
-        }
-
-        return (
-          <Link href={`/routes/${best.route.id}`}>
-            <Card hover className={`border ${levelColors[best.assessment.level]}`}>
-              <div className="flex items-center gap-3">
-                <ThumbsUp className="w-5 h-5 text-kelp-green" />
-                <div>
-                  <p className="text-xs font-semibold text-kelp-green uppercase tracking-wide">
-                    Best Paddle Today
-                  </p>
-                  <p className="font-bold text-deep-ocean">{best.route.name}</p>
-                  <p className="text-xs text-driftwood capitalize">
-                    {best.route.type} — {best.assessment.label}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </Link>
-        )
+        return <RouteSuggestions scores={top3} />
       })()}
 
       <WaveDividerSubtle />

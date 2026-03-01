@@ -26,6 +26,15 @@ export function formatRelativeDate(dateStr: string | Date): string {
   return formatDate(dateStr)
 }
 
+export function formatDateRange(start: string | Date, end: string | Date): string {
+  const s = new Date(start)
+  const e = new Date(end)
+  if (s.getFullYear() === e.getFullYear()) {
+    return `${formatDateShort(s)} \u2013 ${formatDate(e)}`
+  }
+  return `${formatDate(s)} \u2013 ${formatDate(e)}`
+}
+
 export function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60)
   const mins = minutes % 60

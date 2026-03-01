@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { formatDate, formatDistance } from '@/lib/utils'
+import { formatDate, formatDateRange, formatDistance } from '@/lib/utils'
 import { Card } from '@/components/ui/Card'
 import { TypeBadge, StatusBadge } from '@/components/ui/Badge'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -88,7 +88,9 @@ export default async function PaddlesPage() {
                         <div className="flex items-center gap-3 text-sm text-driftwood">
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3.5 h-3.5" />
-                            {formatDate(paddle.date)}
+                            {paddle.endDate
+                              ? formatDateRange(paddle.date, paddle.endDate)
+                              : formatDate(paddle.date)}
                           </span>
                           {paddle.startTime && (
                             <span className="text-storm-grey font-medium">
@@ -197,7 +199,9 @@ export default async function PaddlesPage() {
                             <TypeBadge type={route.type} size="sm" />
                           )}
                           <span className="text-xs text-driftwood">
-                            {formatDate(paddle.date)}
+                            {paddle.endDate
+                              ? formatDateRange(paddle.date, paddle.endDate)
+                              : formatDate(paddle.date)}
                           </span>
                           <span className="flex items-center gap-0.5 text-xs text-driftwood">
                             <Users className="w-3 h-3" />

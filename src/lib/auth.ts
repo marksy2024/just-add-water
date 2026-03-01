@@ -14,6 +14,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       server: { host: 'smtp.resend.com', port: 465, auth: { user: 'resend', pass: process.env.RESEND_API_KEY! } },
       from: process.env.EMAIL_FROM || 'Just Add Water <noreply@jaw.wearesmc.co.uk>',
       sendVerificationRequest: async ({ identifier: email, url }) => {
+        // Wrap the callback URL in an intermediate page to prevent
+        // email client link prefetching from consuming the one-time token
+        const appUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://jaw.wearesmc.co.uk'
+        const verifyUrl = `${appUrl}/login/verify?url=${encodeURIComponent(url)}`
+
         await resend.emails.send({
           from: process.env.EMAIL_FROM || 'Just Add Water <noreply@jaw.wearesmc.co.uk>',
           to: email,
@@ -28,7 +33,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 <p style="color: #475569; font-size: 16px; margin: 0 0 24px;">
                   Click the button below to sign in. This link expires in 24 hours.
                 </p>
-                <a href="${url}" style="display: inline-block; background: #0C4A6E; color: #fff; font-weight: 600; font-size: 16px; padding: 12px 32px; border-radius: 8px; text-decoration: none;">
+                <a href="${verifyUrl}" style="display: inline-block; background: #0C4A6E; color: #fff; font-weight: 600; font-size: 16px; padding: 12px 32px; border-radius: 8px; text-decoration: none;">
                   Sign In
                 </a>
               </div>

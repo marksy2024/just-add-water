@@ -48,13 +48,17 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="card p-6 space-y-4">
               <Input
                 label="Email address"
-                type="email"
+                type="text"
+                inputMode="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value.trim())}
                 placeholder="you@example.com"
                 required
                 autoFocus
                 autoComplete="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
               />
               <Button type="submit" loading={loading} disabled={!email} className="w-full" size="lg">
                 Send Magic Link

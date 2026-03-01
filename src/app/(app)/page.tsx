@@ -4,7 +4,7 @@ import { getDashboardGreeting, formatDate } from '@/lib/utils'
 import { Card } from '@/components/ui/Card'
 import { StatusBadge } from '@/components/ui/Badge'
 import Link from 'next/link'
-import { CalendarPlus, ClipboardPen, CalendarDays, User, MapPin, Calendar, Flame, AlertTriangle } from 'lucide-react'
+import { CalendarPlus, ClipboardPen, Search, User, MapPin, Calendar, Flame, AlertTriangle } from 'lucide-react'
 
 export default async function DashboardPage() {
   const session = await auth()
@@ -81,10 +81,10 @@ export default async function DashboardPage() {
       bgTint: 'bg-kelp-green/10',
     },
     {
-      href: '/calendar',
-      icon: CalendarDays,
-      label: 'Calendar',
-      hint: "See what\u2019s coming up",
+      href: '/discover',
+      icon: Search,
+      label: 'Find a Paddle',
+      hint: 'Discover new routes',
       color: 'bg-sunset-coral',
       iconColor: 'text-sunset-coral',
       bgTint: 'bg-sunset-coral/10',

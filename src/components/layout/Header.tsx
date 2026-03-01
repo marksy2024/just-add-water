@@ -13,6 +13,7 @@ export function Header() {
     if (pathname.startsWith('/routes/new')) return 'Add Route'
     if (pathname.startsWith('/routes')) return 'Routes'
     if (pathname === '/conditions') return 'Conditions'
+    if (pathname === '/discover') return 'Discover'
     if (pathname === '/group') return 'Group'
     if (pathname.startsWith('/paddles/new')) return 'Log a Paddle'
     if (pathname.startsWith('/paddles/plan')) return 'Plan a Paddle'

@@ -247,14 +247,14 @@ export function CalendarView({ initialPaddles, initialYear, initialMonth }: Cale
 
       {/* Selected Day Panel */}
       {selectedDay !== null && (
-        <div className="fixed inset-x-0 bottom-0 z-40 animate-slide-up">
+        <div className="fixed inset-x-0 bottom-0 z-50 animate-slide-up">
           <div className="bg-salt-white rounded-t-2xl shadow-[0_-4px_24px_rgba(12,74,110,0.12)] max-w-2xl mx-auto">
             {/* Handle bar */}
             <div className="flex justify-center pt-2 pb-1">
               <div className="w-10 h-1 rounded-full bg-storm-grey/20" />
             </div>
 
-            <div className="px-4 pb-6 max-h-[50vh] overflow-y-auto">
+            <div className="px-4 pb-6 min-h-[30vh] max-h-[50vh] overflow-y-auto">
               {/* Panel header */}
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base font-bold text-deep-ocean">

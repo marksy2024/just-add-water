@@ -7,6 +7,7 @@ import { Resend } from 'resend'
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   adapter: PrismaAdapter(prisma),
   providers: [
     EmailProvider({
@@ -47,6 +48,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: {
     signIn: '/login',
     verifyRequest: '/login/check-email',
+    error: '/login',
   },
   callbacks: {
     async session({ session, user }) {

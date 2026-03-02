@@ -41,6 +41,7 @@ model User {
   foodAllocations    FoodAllocation[]
   notifications      Notification[]    @relation("notificationRecipient")
   actedNotifications Notification[]    @relation("notificationActor")
+  favouriteRoutes    FavouriteRoute[]
 
   @@map("users")
 }
@@ -132,8 +133,9 @@ model Route {
 
   creator       User?          @relation("routeCreator", fields: [createdBy], references: [id], onDelete: SetNull)
   paddles       Paddle[]
-  routeComments RouteComment[]
-  routePhotos   RoutePhoto[]
+  routeComments  RouteComment[]
+  routePhotos    RoutePhoto[]
+  favouritedBy   FavouriteRoute[]
 
   @@map("routes")
 }
@@ -428,4 +430,21 @@ model Notification {
 
   @@index([userId, read])
   @@map("notifications")
+}
+
+// ============================================================
+// FAVOURITE ROUTES
+// ============================================================
+
+model FavouriteRoute {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  routeId   String   @map("route_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  route Route @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, routeId])
+  @@map("favourite_routes")
 }

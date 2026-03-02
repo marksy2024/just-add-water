@@ -28,7 +28,8 @@ function getDepartment(lat: number, lng: number): string | null {
 }
 
 export default async function RoutesPage() {
-  await auth()
+  const session = await auth()
+  const userId = session?.user?.id
 
   const routes = await prisma.route.findMany({
     include: {
@@ -53,6 +54,16 @@ export default async function RoutesPage() {
       return acc
     }, {} as Record<string, number>)
   }
+
+  // Fetch user's favourite route IDs
+  const favouriteRouteIds = new Set(
+    userId
+      ? (await prisma.favouriteRoute.findMany({
+          where: { userId },
+          select: { routeId: true },
+        })).map((f) => f.routeId)
+      : []
+  )
 
   // Batch-fetch water levels for routes with Hub'Eau station codes
   const stationCodes = [...new Set(
@@ -91,6 +102,7 @@ export default async function RoutesPage() {
       department: lat && lng ? getDepartment(lat, lng) : null,
       paddleCount: paddleCounts[route.id] || 0,
       creatorName: route.creator?.name || null,
+      isFavourite: favouriteRouteIds.has(route.id),
     }
   })
 

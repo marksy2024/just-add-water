@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { DiscoverCard } from '@/components/routes/DiscoverCard'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { Heart } from 'lucide-react'
 import type { WaterLevelData } from '@/lib/water-level'
 
 interface SerializedRoute {
@@ -19,6 +20,7 @@ interface SerializedRoute {
   department: string | null
   paddleCount: number
   creatorName: string | null
+  isFavourite: boolean
 }
 
 interface RouteFiltersProps {
@@ -41,19 +43,56 @@ const DEPARTMENTS = [
 export function RouteFilters({ routes, waterLevels }: RouteFiltersProps) {
   const [typeFilter, setTypeFilter] = useState<string>('All')
   const [deptFilter, setDeptFilter] = useState<string>('All')
+  const [showFavourites, setShowFavourites] = useState(false)
+  const [favourites, setFavourites] = useState<Set<string>>(
+    () => new Set(routes.filter((r) => r.isFavourite).map((r) => r.id))
+  )
+
+  const toggleFavourite = useCallback(async (routeId: string) => {
+    // Optimistic update
+    setFavourites((prev) => {
+      const next = new Set(prev)
+      if (next.has(routeId)) next.delete(routeId)
+      else next.add(routeId)
+      return next
+    })
+    try {
+      await fetch(`/api/routes/${routeId}/favourite`, { method: 'POST' })
+    } catch {
+      // Revert on error
+      setFavourites((prev) => {
+        const next = new Set(prev)
+        if (next.has(routeId)) next.delete(routeId)
+        else next.add(routeId)
+        return next
+      })
+    }
+  }, [])
 
   const filtered = useMemo(() => {
     return routes.filter((route) => {
+      if (showFavourites && !favourites.has(route.id)) return false
       if (typeFilter !== 'All' && route.type !== typeFilter.toLowerCase()) return false
       if (deptFilter !== 'All' && route.department !== deptFilter) return false
       return true
     })
-  }, [routes, typeFilter, deptFilter])
+  }, [routes, typeFilter, deptFilter, showFavourites, favourites])
 
   return (
     <>
-      {/* Type filter chips */}
+      {/* Favourites toggle + Type filter chips */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+        <button
+          onClick={() => setShowFavourites(!showFavourites)}
+          className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1 ${
+            showFavourites
+              ? 'bg-sunset-coral text-white'
+              : 'bg-storm-grey/10 text-storm-grey hover:bg-storm-grey/20'
+          }`}
+        >
+          <Heart className={`w-3 h-3 ${showFavourites ? 'fill-current' : ''}`} />
+          Favourites
+        </button>
         {TYPE_FILTERS.map((type) => (
           <button
             key={type}
@@ -108,6 +147,8 @@ export function RouteFilters({ routes, waterLevels }: RouteFiltersProps) {
               }
               paddleCount={route.paddleCount}
               creatorName={route.creatorName}
+              isFavourite={favourites.has(route.id)}
+              onToggleFavourite={toggleFavourite}
             />
           ))
         )}

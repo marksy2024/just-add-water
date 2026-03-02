@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { TypeBadge, DifficultyBadge } from '@/components/ui/Badge'
-import { Ruler, Navigation, ExternalLink, Droplets, CalendarDays, Waves } from 'lucide-react'
+import { Ruler, Navigation, ExternalLink, Droplets, CalendarDays, Waves, Heart } from 'lucide-react'
 import type { WaterLevelData } from '@/lib/water-level'
 import { trendIcon, trendColor, formatWaterLevel } from '@/lib/water-level'
 
@@ -25,9 +25,11 @@ interface DiscoverCardProps {
   waterLevel?: WaterLevelData | null
   paddleCount?: number
   creatorName?: string | null
+  isFavourite?: boolean
+  onToggleFavourite?: (routeId: string) => void
 }
 
-export function DiscoverCard({ route, waterLevel, paddleCount, creatorName }: DiscoverCardProps) {
+export function DiscoverCard({ route, waterLevel, paddleCount, creatorName, isFavourite, onToggleFavourite }: DiscoverCardProps) {
   const router = useRouter()
   const lat = route.putInLat
   const lng = route.putInLng
@@ -36,11 +38,22 @@ export function DiscoverCard({ route, waterLevel, paddleCount, creatorName }: Di
   return (
     <div onClick={() => router.push(`/routes/${route.id}`)} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/routes/${route.id}`) }}>
       <Card hover className="space-y-2">
-        {/* Row 1: Name + badges */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <h3 className="font-bold text-deep-ocean text-sm leading-tight">{route.name}</h3>
-          <TypeBadge type={route.type} size="sm" />
-          <DifficultyBadge difficulty={route.difficulty} />
+        {/* Row 1: Name + badges + favourite */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+            <h3 className="font-bold text-deep-ocean text-sm leading-tight">{route.name}</h3>
+            <TypeBadge type={route.type} size="sm" />
+            <DifficultyBadge difficulty={route.difficulty} />
+          </div>
+          {onToggleFavourite && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleFavourite(route.id) }}
+              className="shrink-0 p-1 -m-1 transition-colors"
+              aria-label={isFavourite ? 'Remove from favourites' : 'Add to favourites'}
+            >
+              <Heart className={`w-4.5 h-4.5 transition-colors ${isFavourite ? 'fill-sunset-coral text-sunset-coral' : 'text-storm-grey/30'}`} />
+            </button>
+          )}
         </div>
 
         {/* Row 2: Distance + Put-in */}

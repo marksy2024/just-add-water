@@ -110,6 +110,29 @@ export async function fetchStravaActivity(
 }
 
 /**
+ * Fetch recent activities from Strava (last 30 days, up to 30 activities)
+ */
+export async function fetchStravaActivities(
+  accessToken: string,
+  after?: number,
+): Promise<StravaActivity[]> {
+  const params = new URLSearchParams({
+    per_page: '30',
+  })
+  if (after) params.set('after', after.toString())
+
+  const res = await fetch(`${STRAVA_API}/athlete/activities?${params}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch Strava activities')
+  }
+
+  return res.json()
+}
+
+/**
  * Check if an activity type is a paddling activity
  */
 export function isPaddlingActivity(type: string, sportType: string): boolean {

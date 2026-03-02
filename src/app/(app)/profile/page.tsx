@@ -81,15 +81,25 @@ export default async function ProfilePage() {
     (p) => p.paddle && p.paddle.status === 'completed'
   ) || []
 
-  const totalKm = completedParticipations.reduce(
-    (sum, p) => sum + (Number(p.distanceKm) || Number(p.paddle?.distanceKm) || 0),
-    0
-  )
-  const totalPaddles = completedParticipations.length
-  const totalMinutes = completedParticipations.reduce(
-    (sum, p) => sum + (p.durationMinutes || 0),
-    0
-  )
+  const now = new Date()
+  const yearStart = new Date(now.getFullYear(), 0, 1)
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+
+  function calcStats(items: typeof completedParticipations) {
+    return {
+      km: items.reduce((s, p) => s + (Number(p.distanceKm) || Number(p.paddle?.distanceKm) || 0), 0),
+      paddles: items.length,
+      minutes: items.reduce((s, p) => s + (p.durationMinutes || 0), 0),
+    }
+  }
+
+  const monthItems = completedParticipations.filter((p) => new Date(p.paddle.date) >= monthStart)
+  const yearItems = completedParticipations.filter((p) => new Date(p.paddle.date) >= yearStart)
+
+  const monthStats = calcStats(monthItems)
+  const yearStats = calcStats(yearItems)
+  const allTimeStats = calcStats(completedParticipations)
+
   const longestPaddle = completedParticipations.reduce((max, p) => {
     const km = Number(p.distanceKm) || Number(p.paddle?.distanceKm) || 0
     return km > max ? km : max
@@ -146,30 +156,77 @@ export default async function ProfilePage() {
         <h2 className="text-sm font-semibold text-driftwood uppercase tracking-wide mb-3">
           My Stats
         </h2>
-        <div className="grid grid-cols-2 gap-3">
-          <Card padding="sm">
-            <p className="text-xs text-driftwood mb-0.5">Total Distance</p>
-            <p className="stat-number text-xl">{totalKm.toFixed(1)}km</p>
-          </Card>
-          <Card padding="sm">
-            <p className="text-xs text-driftwood mb-0.5">Total Paddles</p>
-            <p className="stat-number text-xl">{totalPaddles}</p>
-          </Card>
-          <Card padding="sm">
-            <p className="text-xs text-driftwood mb-0.5">Time on Water</p>
-            <p className="stat-number text-xl">
-              {totalMinutes > 0 ? formatDuration(totalMinutes) : '0h'}
-            </p>
-          </Card>
-          <Card padding="sm">
-            <p className="text-xs text-driftwood mb-0.5">Longest Paddle</p>
-            <p className="stat-number text-xl">{formatDistance(longestPaddle)}</p>
-          </Card>
-        </div>
+
+        {/* Month to Date */}
+        <Card padding="sm" className="mb-3">
+          <p className="text-xs font-semibold text-atlantic-blue uppercase tracking-wide mb-2">
+            {now.toLocaleDateString('en-GB', { month: 'long' })} (Month to Date)
+          </p>
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div>
+              <p className="stat-number text-lg">{monthStats.km.toFixed(1)}km</p>
+              <p className="text-[10px] text-driftwood">Distance</p>
+            </div>
+            <div>
+              <p className="stat-number text-lg">{monthStats.paddles}</p>
+              <p className="text-[10px] text-driftwood">Paddles</p>
+            </div>
+            <div>
+              <p className="stat-number text-lg">{monthStats.minutes > 0 ? formatDuration(monthStats.minutes) : '0h'}</p>
+              <p className="text-[10px] text-driftwood">Time</p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Year to Date */}
+        <Card padding="sm" className="mb-3">
+          <p className="text-xs font-semibold text-kelp-green uppercase tracking-wide mb-2">
+            {now.getFullYear()} (Year to Date)
+          </p>
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div>
+              <p className="stat-number text-lg">{yearStats.km.toFixed(1)}km</p>
+              <p className="text-[10px] text-driftwood">Distance</p>
+            </div>
+            <div>
+              <p className="stat-number text-lg">{yearStats.paddles}</p>
+              <p className="text-[10px] text-driftwood">Paddles</p>
+            </div>
+            <div>
+              <p className="stat-number text-lg">{yearStats.minutes > 0 ? formatDuration(yearStats.minutes) : '0h'}</p>
+              <p className="text-[10px] text-driftwood">Time</p>
+            </div>
+          </div>
+        </Card>
+
+        {/* All Time */}
+        <Card padding="sm" className="mb-3">
+          <p className="text-xs font-semibold text-driftwood uppercase tracking-wide mb-2">
+            All Time
+          </p>
+          <div className="grid grid-cols-4 gap-2 text-center">
+            <div>
+              <p className="stat-number text-lg">{allTimeStats.km.toFixed(1)}km</p>
+              <p className="text-[10px] text-driftwood">Distance</p>
+            </div>
+            <div>
+              <p className="stat-number text-lg">{allTimeStats.paddles}</p>
+              <p className="text-[10px] text-driftwood">Paddles</p>
+            </div>
+            <div>
+              <p className="stat-number text-lg">{allTimeStats.minutes > 0 ? formatDuration(allTimeStats.minutes) : '0h'}</p>
+              <p className="text-[10px] text-driftwood">Time</p>
+            </div>
+            <div>
+              <p className="stat-number text-lg">{formatDistance(longestPaddle)}</p>
+              <p className="text-[10px] text-driftwood">Longest</p>
+            </div>
+          </div>
+        </Card>
 
         {/* Favourite route */}
         {favouriteRoute && (
-          <Card padding="sm" className="mt-3">
+          <Card padding="sm">
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-atlantic-blue" />
               <div>

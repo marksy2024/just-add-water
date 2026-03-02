@@ -4,16 +4,18 @@ import { prisma } from '@/lib/db'
 import { exchangeStravaCode } from '@/lib/strava'
 
 export async function GET(req: NextRequest) {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.url
+
   const session = await auth()
   if (!session?.user?.id) {
-    return NextResponse.redirect(new URL('/login', req.url))
+    return NextResponse.redirect(new URL('/login', baseUrl))
   }
 
   const code = req.nextUrl.searchParams.get('code')
   const error = req.nextUrl.searchParams.get('error')
 
   if (error || !code) {
-    return NextResponse.redirect(new URL('/profile?strava=error', req.url))
+    return NextResponse.redirect(new URL('/profile?strava=error', baseUrl))
   }
 
   try {
@@ -29,9 +31,9 @@ export async function GET(req: NextRequest) {
       },
     })
 
-    return NextResponse.redirect(new URL('/profile?strava=connected', req.url))
+    return NextResponse.redirect(new URL('/profile?strava=connected', baseUrl))
   } catch (err) {
     console.error('Strava OAuth error:', err)
-    return NextResponse.redirect(new URL('/profile?strava=error', req.url))
+    return NextResponse.redirect(new URL('/profile?strava=error', baseUrl))
   }
 }

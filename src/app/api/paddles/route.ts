@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { updateStreak } from '@/lib/streaks'
 import { evaluateBadges } from '@/lib/badges'
+import { notifyMany } from '@/lib/notifications'
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -121,6 +122,14 @@ export async function POST(req: NextRequest) {
         console.error('Error updating streak/badges:', e)
       }
     }
+
+    // Notify all other users about new paddle (fire-and-forget)
+    prisma.user.findMany({ select: { id: true } })
+      .then(async (users) => {
+        const allUserIds = users.map((u) => u.id)
+        await notifyMany(allUserIds, 'new_paddle', `New paddle: "${paddle.title}"`, paddle.id, userId)
+      })
+      .catch(() => {})
 
     return NextResponse.json({ paddle, new_badges: newBadges }, { status: 201 })
   } catch (err) {

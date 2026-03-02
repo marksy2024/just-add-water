@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { notify } from '@/lib/notifications'
 
 export async function POST(
   req: NextRequest,
@@ -28,7 +29,7 @@ export async function POST(
     // Verify the paddle exists
     const paddle = await prisma.paddle.findUnique({
       where: { id: paddleId },
-      select: { id: true },
+      select: { id: true, title: true },
     })
 
     if (!paddle) {
@@ -87,6 +88,10 @@ export async function POST(
         user: { select: { id: true, name: true, email: true, image: true } },
       },
     })
+
+    // Fire-and-forget notification
+    notify(userId, 'added_to_paddle', `You were added to "${paddle.title}"`, paddleId, callerId)
+      .catch(() => {})
 
     return NextResponse.json({ participant }, { status: 201 })
   } catch (err) {

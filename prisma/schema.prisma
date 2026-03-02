@@ -39,6 +39,8 @@ model User {
   streak             UserStreak?
   challengesCreated  Challenge[]         @relation("challengeCreator")
   foodAllocations    FoodAllocation[]
+  notifications      Notification[]    @relation("notificationRecipient")
+  actedNotifications Notification[]    @relation("notificationActor")
 
   @@map("users")
 }
@@ -165,6 +167,7 @@ model Paddle {
   floatPlans      FloatPlan[]
   badgesEarned    BadgeEarned[]
   foodAllocations FoodAllocation[]
+  notifications   Notification[]
 
   @@map("paddles")
 }
@@ -403,4 +406,26 @@ model FoodAllocation {
 
   @@unique([paddleId, userId, category])
   @@map("food_allocations")
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String   // added_to_paddle, comment, rsvp, new_paddle
+  title     String
+  paddleId  String?  @map("paddle_id")
+  actorId   String?  @map("actor_id")
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User    @relation("notificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  paddle Paddle? @relation(fields: [paddleId], references: [id], onDelete: Cascade)
+  actor  User?   @relation("notificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([userId, read])
+  @@map("notifications")
 }

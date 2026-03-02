@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { notify } from '@/lib/notifications'
 
 export async function POST(
   req: NextRequest,
@@ -28,7 +29,7 @@ export async function POST(
     // Verify the paddle exists and is planned
     const paddle = await prisma.paddle.findUnique({
       where: { id: paddleId },
-      select: { id: true, status: true },
+      select: { id: true, status: true, title: true, createdBy: true },
     })
 
     if (!paddle) {
@@ -52,6 +53,13 @@ export async function POST(
       },
       select: { id: true, role: true },
     })
+
+    // Notify the organiser (fire-and-forget)
+    if (paddle.createdBy && paddle.createdBy !== userId) {
+      const rsvpLabel = rsvp === 'going' ? 'is going' : rsvp === 'maybe' ? 'might join' : 'can\'t make'
+      notify(paddle.createdBy, 'rsvp', `Someone ${rsvpLabel} to "${paddle.title}"`, paddleId, userId)
+        .catch(() => {})
+    }
 
     if (existing) {
       // Update existing RSVP

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { notifyMany } from '@/lib/notifications'
 
 export async function GET(
   _req: NextRequest,
@@ -68,7 +69,7 @@ export async function POST(
     // Verify the paddle exists
     const paddle = await prisma.paddle.findUnique({
       where: { id: paddleId },
-      select: { id: true },
+      select: { id: true, title: true, participants: { select: { userId: true } } },
     })
 
     if (!paddle) {
@@ -92,6 +93,11 @@ export async function POST(
         },
       },
     })
+
+    // Notify other participants (fire-and-forget)
+    const participantIds = paddle.participants.map((p) => p.userId)
+    notifyMany(participantIds, 'comment', `New comment on "${paddle.title}"`, paddleId, userId)
+      .catch(() => {})
 
     return NextResponse.json({ comment }, { status: 201 })
   } catch (err) {

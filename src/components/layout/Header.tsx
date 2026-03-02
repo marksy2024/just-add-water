@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { User, Plus } from 'lucide-react'
+import { AlertBell } from '@/components/layout/AlertBell'
 
 export function Header() {
   const pathname = usePathname()
@@ -17,6 +18,7 @@ export function Header() {
     if (pathname.startsWith('/paddles/new')) return 'Log a Paddle'
     if (pathname.startsWith('/paddles/plan')) return 'Plan a Paddle'
     if (pathname.startsWith('/paddles')) return 'Paddles'
+    if (pathname === '/alerts') return 'Alerts'
     if (pathname === '/profile') return 'Profile'
     if (pathname === '/invite') return 'Invite'
     return ''
@@ -41,6 +43,7 @@ export function Header() {
           >
             <Plus className="w-4 h-4" />
           </Link>
+          <AlertBell />
           <Link
             href="/profile"
             className="w-8 h-8 rounded-full bg-sea-foam text-deep-ocean flex items-center justify-center hover:bg-sea-foam/70 transition-colors"

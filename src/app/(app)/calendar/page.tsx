@@ -5,6 +5,7 @@ export interface CalendarPaddle {
   id: string
   title: string
   date: string
+  end_date: string | null
   status: 'planned' | 'active' | 'completed'
   distance_km: number | null
   route_name: string | null
@@ -17,7 +18,7 @@ export default async function CalendarPage() {
   const year = now.getFullYear()
   const month = now.getMonth() + 1 // 1-indexed
 
-  // Fetch paddles for current month
+  // Fetch paddles for current month (including multi-day paddles that overlap)
   const startDate = new Date(`${year}-${String(month).padStart(2, '0')}-01`)
   const endDate = month === 12
     ? new Date(`${year + 1}-01-01`)
@@ -25,15 +26,18 @@ export default async function CalendarPage() {
 
   const paddles = await prisma.paddle.findMany({
     where: {
-      date: {
-        gte: startDate,
-        lt: endDate,
-      },
+      OR: [
+        // Single-day or multi-day paddles starting in this month
+        { date: { gte: startDate, lt: endDate } },
+        // Multi-day paddles that started before but end within/after this month
+        { endDate: { gte: startDate }, date: { lt: endDate } },
+      ],
     },
     select: {
       id: true,
       title: true,
       date: true,
+      endDate: true,
       status: true,
       distanceKm: true,
       route: { select: { name: true, type: true } },
@@ -46,6 +50,7 @@ export default async function CalendarPage() {
     id: p.id,
     title: p.title,
     date: p.date as unknown as string,
+    end_date: p.endDate ? (p.endDate as unknown as string) : null,
     status: p.status as CalendarPaddle['status'],
     distance_km: p.distanceKm ? Number(p.distanceKm) : null,
     route_name: p.route?.name || null,

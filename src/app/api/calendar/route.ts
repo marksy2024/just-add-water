@@ -31,15 +31,18 @@ export async function GET(request: NextRequest) {
   try {
     const paddles = await prisma.paddle.findMany({
       where: {
-        date: {
-          gte: startDate,
-          lt: endDate,
-        },
+        OR: [
+          // Single-day or multi-day paddles starting in this month
+          { date: { gte: startDate, lt: endDate } },
+          // Multi-day paddles that started before but end within/after this month
+          { endDate: { gte: startDate }, date: { lt: endDate } },
+        ],
       },
       select: {
         id: true,
         title: true,
         date: true,
+        endDate: true,
         status: true,
         distanceKm: true,
         route: {
@@ -56,8 +59,9 @@ export async function GET(request: NextRequest) {
       id: p.id,
       title: p.title,
       date: p.date,
+      end_date: p.endDate || null,
       status: p.status,
-      distance_km: p.distanceKm,
+      distance_km: p.distanceKm ? Number(p.distanceKm) : null,
       route_name: p.route?.name || null,
       route_type: p.route?.type || null,
       participant_count: p.participants?.length || 0,

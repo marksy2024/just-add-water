@@ -2,7 +2,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { formatDate, formatDateRange, formatDuration, formatDistance } from '@/lib/utils'
 import { Card } from '@/components/ui/Card'
-import { TypeBadge, StatusBadge, CommentTypeBadge } from '@/components/ui/Badge'
+import { TypeBadge, StatusBadge } from '@/components/ui/Badge'
 import { WhatsAppShare } from '@/components/ui/WhatsAppShare'
 import { WaveDividerSubtle } from '@/components/ui/WaveDivider'
 import { RSVPButtons } from '@/components/paddles/RSVPButtons'
@@ -11,7 +11,7 @@ import { FloatPlanForm } from '@/components/paddles/FloatPlanForm'
 import { PaddlePhotos } from '@/components/paddles/PaddlePhotos'
 import { AddParticipants } from '@/components/paddles/AddParticipants'
 import { FoodSection } from '@/components/paddles/FoodSection'
-import { PaddleCommentForm } from '@/components/paddles/PaddleCommentForm'
+import { PaddleComments } from '@/components/paddles/PaddleComments'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { RouteMap } from '@/components/maps/RouteMap'
@@ -25,9 +25,7 @@ import {
   Users,
   Car,
   UtensilsCrossed,
-  MessageCircle,
   StickyNote,
-  AlertTriangle,
 } from 'lucide-react'
 
 interface PageProps {
@@ -129,9 +127,13 @@ export default async function PaddleDetailPage({ params }: PageProps) {
     route.putInLat != null && route.takeOutLat != null &&
     (Number(route.putInLat) !== Number(route.takeOutLat) || Number(route.putInLng) !== Number(route.takeOutLng))
 
-  // Separate hazard comments for highlighting
-  const hazardComments = comments.filter((c) => c.commentType === 'hazard')
-  const otherComments = comments.filter((c) => c.commentType !== 'hazard')
+  // Serialize comments for client component
+  const serializedComments = comments.map((c) => ({
+    id: c.id,
+    text: c.text,
+    createdAt: c.createdAt.toISOString(),
+    user: c.user ? { id: c.user.id, name: c.user.name, image: c.user.image } : null,
+  }))
 
   // WhatsApp share message
   const appLink = typeof process !== 'undefined'
@@ -267,27 +269,6 @@ export default async function PaddleDetailPage({ params }: PageProps) {
               </p>
             </Card>
           )}
-        </div>
-      )}
-
-      {/* Hazard warnings at the top */}
-      {hazardComments.length > 0 && (
-        <div className="space-y-2">
-          {hazardComments.map((comment) => (
-            <div
-              key={comment.id}
-              className="comment-hazard rounded-xl px-4 py-3"
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <AlertTriangle className="w-4 h-4 text-sunset-coral" />
-                <CommentTypeBadge type="hazard" />
-                <span className="text-xs text-driftwood">
-                  {comment.user?.name || 'Unknown'}
-                </span>
-              </div>
-              <p className="text-sm text-storm-grey">{comment.text}</p>
-            </div>
-          ))}
         </div>
       )}
 
@@ -477,57 +458,7 @@ export default async function PaddleDetailPage({ params }: PageProps) {
 
       {/* Comments */}
       <section>
-        <div className="flex items-center gap-2 mb-3">
-          <MessageCircle className="w-4 h-4 text-atlantic-blue" />
-          <h2 className="text-sm font-semibold text-driftwood uppercase tracking-wide">
-            Comments ({comments.length})
-          </h2>
-        </div>
-        {otherComments.length > 0 ? (
-          <div className="space-y-3">
-            {otherComments.map((comment) => (
-              <Card key={comment.id} padding="sm">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-sea-foam flex items-center justify-center overflow-hidden shrink-0 mt-0.5">
-                    {comment.user?.image ? (
-                      <img
-                        src={comment.user.image}
-                        alt={comment.user.name || ''}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-xs font-semibold text-atlantic-blue">
-                        {(comment.user?.name || '?').charAt(0).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="text-sm font-semibold text-deep-ocean">
-                        {comment.user?.name || 'Unknown'}
-                      </span>
-                      {comment.commentType !== 'general' && (
-                        <CommentTypeBadge type={comment.commentType} />
-                      )}
-                      <span className="text-xs text-driftwood">
-                        {formatDate(comment.createdAt)}
-                      </span>
-                    </div>
-                    <p className="text-sm text-storm-grey">{comment.text}</p>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card padding="sm">
-            <p className="text-sm text-driftwood text-center py-3">
-              No comments yet. Be the first to share a thought!
-            </p>
-          </Card>
-        )}
-
-        <PaddleCommentForm paddleId={paddle.id} />
+        <PaddleComments paddleId={paddle.id} comments={serializedComments} />
       </section>
 
       {/* Photos Gallery */}

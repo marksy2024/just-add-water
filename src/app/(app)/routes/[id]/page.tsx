@@ -11,6 +11,7 @@ import { ConditionsCard } from '@/components/routes/ConditionsCard'
 import { RouteComments } from '@/components/routes/RouteComments'
 import Link from 'next/link'
 import { RouteMap } from '@/components/maps/RouteMap'
+import { FavouriteButton } from '@/components/routes/FavouriteButton'
 import {
   MapPin,
   Waves,
@@ -36,14 +37,16 @@ const photoTypeLabels: Record<string, string> = {
 
 export default async function RouteDetailPage({ params }: RouteDetailPageProps) {
   const { id } = await params
-  await auth()
+  const session = await auth()
+  const userId = session?.user?.id
 
-  // Fetch route, comments, photos, and paddle count in parallel
+  // Fetch route, comments, photos, paddle count, and favourite status in parallel
   const [
     route,
     comments,
     photos,
     paddleCount,
+    favourite,
   ] = await Promise.all([
     prisma.route.findUnique({
       where: { id },
@@ -68,6 +71,11 @@ export default async function RouteDetailPage({ params }: RouteDetailPageProps) 
     prisma.paddle.count({
       where: { routeId: id },
     }),
+    userId
+      ? prisma.favouriteRoute.findUnique({
+          where: { userId_routeId: { userId, routeId: id } },
+        })
+      : null,
   ])
 
   if (!route) notFound()
@@ -108,9 +116,12 @@ export default async function RouteDetailPage({ params }: RouteDetailPageProps) 
       {/* Route header */}
       <div>
         <div className="flex items-start justify-between gap-3 mb-2">
-          <h1 className="text-2xl font-extrabold text-deep-ocean leading-tight">
-            {route.name}
-          </h1>
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-2xl font-extrabold text-deep-ocean leading-tight">
+              {route.name}
+            </h1>
+            <FavouriteButton routeId={route.id} initialFavourited={!!favourite} />
+          </div>
           <TypeBadge type={route.type} />
         </div>
 

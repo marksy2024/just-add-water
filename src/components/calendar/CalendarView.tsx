@@ -10,8 +10,8 @@ import Link from 'next/link'
 interface CalendarPaddle {
   id: string
   title: string
-  date: string
-  end_date: string | null
+  date: string | Date
+  end_date: string | Date | null
   status: 'planned' | 'active' | 'completed'
   distance_km: number | null
   route_name: string | null
@@ -65,8 +65,12 @@ function isToday(year: number, month: number, day: number): boolean {
 
 /* ── Date helpers (timezone-safe) ────────────────────────────────────────── */
 
-function parseLocalDate(dateStr: string): { year: number; month: number; day: number } {
-  const parts = dateStr.slice(0, 10).split('-')
+function parseLocalDate(dateInput: string | Date): { year: number; month: number; day: number } {
+  if (typeof dateInput !== 'string') {
+    const d = new Date(dateInput)
+    return { year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate() }
+  }
+  const parts = dateInput.slice(0, 10).split('-')
   return { year: +parts[0], month: +parts[1], day: +parts[2] }
 }
 

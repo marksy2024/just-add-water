@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db'
 import { getWeather, weatherCodeToIcon, weatherCodeToLabel, windDirectionLabel } from '@/lib/weather'
 import { getWaterLevel } from '@/lib/water-level'
-import { getSunTimes, formatTime } from '@/lib/sun'
+import { getSunTimes, formatTime, formatDayLength } from '@/lib/sun'
 import { rankRoutes, type RouteScoreInput } from '@/lib/route-scoring'
 import { Card, CardTitle } from '@/components/ui/Card'
 import { WaveDividerSubtle } from '@/components/ui/WaveDivider'
@@ -159,7 +159,7 @@ export default async function ConditionsPage() {
             <div>
               <p className="text-[10px] text-driftwood">Day Length</p>
               <p className="text-sm font-semibold text-deep-ocean">
-                {sunTimes.dayLength}
+                {formatDayLength(sunTimes.dayLength)}
               </p>
             </div>
           </div>

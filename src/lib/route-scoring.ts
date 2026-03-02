@@ -78,8 +78,9 @@ function bearingFromGeojson(geojson: unknown): number | null {
   return null
 }
 
-/** Parse dayLength string (HH:MM:SS or seconds) to hours */
-function parseDayLengthHours(dayLength: string): number {
+/** Parse dayLength string (HH:MM:SS) or number (seconds) to hours */
+function parseDayLengthHours(dayLength: string | number): number {
+  if (typeof dayLength === 'number') return dayLength / 3600
   // Try HH:MM:SS format
   const parts = dayLength.split(':')
   if (parts.length === 3) {

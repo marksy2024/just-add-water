@@ -7,7 +7,7 @@ import { getWeather, weatherCodeToIcon, weatherCodeToLabel, windDirectionLabel }
 import type { WeatherForecast } from '@/lib/weather'
 import { getWaterLevel, trendIcon, trendColor, formatWaterLevel } from '@/lib/water-level'
 import type { WaterLevelData } from '@/lib/water-level'
-import { getSunTimes, formatTime } from '@/lib/sun'
+import { getSunTimes, formatTime, formatDayLength } from '@/lib/sun'
 import type { SunTimes } from '@/lib/sun'
 import { assessConditions } from '@/lib/conditions'
 import { TrafficLight } from '@/components/routes/TrafficLight'
@@ -187,7 +187,7 @@ export function ConditionsCard({ lat, lng, hubeauStationCode }: ConditionsCardPr
                 <span className="text-driftwood mx-1">-</span>
                 <span className="font-semibold">{formatTime(sunTimes.sunset)}</span>
               </p>
-              <p className="text-[10px] text-driftwood">{sunTimes.dayLength}</p>
+              <p className="text-[10px] text-driftwood">{formatDayLength(sunTimes.dayLength)}</p>
             </div>
           </div>
         )}

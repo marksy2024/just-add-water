@@ -1,14 +1,14 @@
 import { notFound } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { formatDate, formatDistance, formatRelativeDate } from '@/lib/utils'
+import { formatDate, formatDistance } from '@/lib/utils'
 import { Card, CardTitle } from '@/components/ui/Card'
-import { TypeBadge, DifficultyBadge, CommentTypeBadge } from '@/components/ui/Badge'
+import { TypeBadge, DifficultyBadge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { WhatsAppShare } from '@/components/ui/WhatsAppShare'
 import { WaveDividerSubtle } from '@/components/ui/WaveDivider'
 import { ConditionsCard } from '@/components/routes/ConditionsCard'
-import { RouteCommentForm } from '@/components/routes/RouteCommentForm'
+import { RouteComments } from '@/components/routes/RouteComments'
 import Link from 'next/link'
 import { RouteMap } from '@/components/maps/RouteMap'
 import {
@@ -16,7 +16,6 @@ import {
   Waves,
   Calendar,
   ArrowLeft,
-  Pin,
   Download,
   Image as ImageIcon,
 } from 'lucide-react'
@@ -74,6 +73,15 @@ export default async function RouteDetailPage({ params }: RouteDetailPageProps) 
   if (!route) notFound()
 
   const creator = route.creator
+
+  // Serialize comments for client component
+  const serializedComments = comments.map((c) => ({
+    id: c.id,
+    text: c.text,
+    pinned: c.pinned,
+    createdAt: c.createdAt.toISOString(),
+    user: c.user ? { name: c.user.name, image: c.user.image } : null,
+  }))
 
   // Build WhatsApp share message
   const appUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://justaddwater.app'}/routes/${route.id}`
@@ -228,54 +236,7 @@ export default async function RouteDetailPage({ params }: RouteDetailPageProps) 
       <WaveDividerSubtle />
 
       {/* Comments */}
-      <div>
-        <h2 className="text-sm font-semibold text-driftwood uppercase tracking-wide mb-3">
-          Comments ({comments?.length || 0})
-        </h2>
-
-        {comments && comments.length > 0 ? (
-          <div className="space-y-3 mb-6">
-            {comments.map((comment) => {
-              const commentUser = comment.user
-              const isHazard = comment.commentType === 'hazard'
-
-              return (
-                <Card
-                  key={comment.id}
-                  padding="sm"
-                  className={isHazard ? 'comment-hazard' : ''}
-                >
-                  <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-deep-ocean">
-                        {commentUser?.name || 'Unknown'}
-                      </span>
-                      <CommentTypeBadge type={comment.commentType} />
-                      {comment.pinned && (
-                        <Pin className="w-3 h-3 text-atlantic-blue" />
-                      )}
-                    </div>
-                    <span className="text-[10px] text-driftwood whitespace-nowrap">
-                      {formatRelativeDate(comment.createdAt)}
-                    </span>
-                  </div>
-                  <p className="text-sm text-storm-grey whitespace-pre-line">
-                    {comment.text}
-                  </p>
-                </Card>
-              )
-            })}
-          </div>
-        ) : (
-          <Card padding="sm" className="mb-6">
-            <p className="text-sm text-driftwood text-center py-3">
-              No comments yet — be the first to share info about this route.
-            </p>
-          </Card>
-        )}
-
-        <RouteCommentForm routeId={route.id} />
-      </div>
+      <RouteComments routeId={route.id} comments={serializedComments} />
 
       <WaveDividerSubtle />
 

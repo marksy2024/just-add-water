@@ -1,22 +1,40 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { formatDistance } from '@/lib/utils'
-import { Card } from '@/components/ui/Card'
-import { TypeBadge, DifficultyBadge } from '@/components/ui/Badge'
-import { EmptyState } from '@/components/ui/EmptyState'
+import { getWaterLevel } from '@/lib/water-level'
+import type { WaterLevelData } from '@/lib/water-level'
 import { Button } from '@/components/ui/Button'
 import Link from 'next/link'
-import { Plus, MapPin, Waves, Calendar } from 'lucide-react'
+import { Plus } from 'lucide-react'
+import { RouteFilters } from './RouteFilters'
+
+// Department bounding boxes for coordinate-based filtering
+const DEPARTMENT_BOUNDS: Record<string, { south: number; west: number; north: number; east: number }> = {
+  'Vendée':             { south: 46.27, west: -2.40, north: 47.08, east: -0.54 },
+  'Deux-Sèvres':       { south: 45.96, west: -0.73, north: 47.11, east: 0.24 },
+  'Loire-Atlantique':   { south: 46.86, west: -2.56, north: 47.84, east: -0.92 },
+  'Maine-et-Loire':     { south: 47.06, west: -1.35, north: 47.81, east: 0.24 },
+  'Vienne':             { south: 46.06, west: -0.06, north: 47.18, east: 1.21 },
+  'Charente':           { south: 45.19, west: -0.47, north: 46.14, east: 0.95 },
+  'Charente-Maritime':  { south: 45.08, west: -1.56, north: 46.37, east: -0.06 },
+}
+
+function getDepartment(lat: number, lng: number): string | null {
+  for (const [name, bounds] of Object.entries(DEPARTMENT_BOUNDS)) {
+    if (lat >= bounds.south && lat <= bounds.north && lng >= bounds.west && lng <= bounds.east) {
+      return name
+    }
+  }
+  return null
+}
 
 export default async function RoutesPage() {
   await auth()
 
-  // Fetch all routes with creator info
   const routes = await prisma.route.findMany({
     include: {
-      creator: { select: { name: true, image: true } },
+      creator: { select: { name: true } },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { name: 'asc' },
   })
 
   // Fetch paddle counts per route
@@ -28,7 +46,6 @@ export default async function RoutesPage() {
       where: { routeId: { in: routeIds } },
       select: { routeId: true },
     })
-
     paddleCounts = paddles.reduce((acc, p) => {
       if (p.routeId) {
         acc[p.routeId] = (acc[p.routeId] || 0) + 1
@@ -37,14 +54,54 @@ export default async function RoutesPage() {
     }, {} as Record<string, number>)
   }
 
+  // Batch-fetch water levels for routes with Hub'Eau station codes
+  const stationCodes = [...new Set(
+    routes
+      .map((r) => r.hubeauStationCode)
+      .filter((code): code is string => !!code)
+  )]
+
+  const waterLevelResults = await Promise.allSettled(
+    stationCodes.map((code) => getWaterLevel(code))
+  )
+
+  const waterLevels: Record<string, WaterLevelData> = {}
+  stationCodes.forEach((code, i) => {
+    const result = waterLevelResults[i]
+    if (result.status === 'fulfilled' && result.value) {
+      waterLevels[code] = result.value
+    }
+  })
+
+  // Serialize for client component
+  const serializedRoutes = routes.map((route) => {
+    const lat = route.putInLat ? Number(route.putInLat) : null
+    const lng = route.putInLng ? Number(route.putInLng) : null
+    return {
+      id: route.id,
+      name: route.name,
+      type: route.type,
+      difficulty: route.difficulty,
+      distanceKm: route.distanceKm ? Number(route.distanceKm) : null,
+      putInLat: lat,
+      putInLng: lng,
+      putInDescription: route.putInDescription,
+      bestSeasonNotes: route.bestSeasonNotes,
+      hubeauStationCode: route.hubeauStationCode,
+      department: lat && lng ? getDepartment(lat, lng) : null,
+      paddleCount: paddleCounts[route.id] || 0,
+      creatorName: route.creator?.name || null,
+    }
+  })
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-extrabold text-deep-ocean">Routes</h1>
           <p className="text-sm text-driftwood mt-0.5">
-            Your paddling route library
+            Discover and manage paddling routes
           </p>
         </div>
         <Link href="/routes/new">
@@ -55,65 +112,10 @@ export default async function RoutesPage() {
         </Link>
       </div>
 
-      {/* Route Cards */}
-      {routes && routes.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {routes.map((route) => {
-            const creator = route.creator
-            const paddleCount = paddleCounts[route.id] || 0
-
-            return (
-              <Link key={route.id} href={`/routes/${route.id}`}>
-                <Card hover className="h-full">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-deep-ocean leading-tight">
-                      {route.name}
-                    </h3>
-                    <TypeBadge type={route.type} size="sm" />
-                  </div>
-
-                  <div className="flex items-center gap-3 mb-3">
-                    <DifficultyBadge difficulty={route.difficulty} />
-                    {route.distanceKm && (
-                      <span className="flex items-center gap-1 text-xs text-driftwood">
-                        <MapPin className="w-3 h-3" />
-                        {formatDistance(Number(route.distanceKm))}
-                      </span>
-                    )}
-                  </div>
-
-                  {route.bestSeasonNotes && (
-                    <p className="text-xs text-driftwood mb-3 line-clamp-2">
-                      <Calendar className="w-3 h-3 inline mr-1" />
-                      {route.bestSeasonNotes}
-                    </p>
-                  )}
-
-                  <div className="flex items-center justify-between pt-2 border-t border-storm-grey/10">
-                    <span className="flex items-center gap-1 text-xs text-driftwood">
-                      <Waves className="w-3.5 h-3.5" />
-                      {paddleCount === 0
-                        ? 'Not yet paddled'
-                        : `Paddled ${paddleCount} time${paddleCount !== 1 ? 's' : ''}`}
-                    </span>
-                    {creator && (
-                      <span className="text-xs text-driftwood">
-                        by {creator.name}
-                      </span>
-                    )}
-                  </div>
-                </Card>
-              </Link>
-            )
-          })}
-        </div>
-      ) : (
-        <EmptyState
-          title="No routes saved yet"
-          description="Add your first paddling route to start building the group's route library."
-          action={{ label: 'Add Route', href: '/routes/new' }}
-        />
-      )}
+      <RouteFilters
+        routes={serializedRoutes}
+        waterLevels={waterLevels}
+      />
     </div>
   )
 }

@@ -3,11 +3,11 @@
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { TypeBadge, DifficultyBadge } from '@/components/ui/Badge'
-import { Ruler, Navigation, ExternalLink, Droplets, CalendarDays } from 'lucide-react'
+import { Ruler, Navigation, ExternalLink, Droplets, CalendarDays, Waves } from 'lucide-react'
 import type { WaterLevelData } from '@/lib/water-level'
 import { trendIcon, trendColor, formatWaterLevel } from '@/lib/water-level'
 
-interface DiscoverRoute {
+interface RouteCardRoute {
   id: string
   name: string
   type: string
@@ -21,11 +21,13 @@ interface DiscoverRoute {
 }
 
 interface DiscoverCardProps {
-  route: DiscoverRoute
+  route: RouteCardRoute
   waterLevel?: WaterLevelData | null
+  paddleCount?: number
+  creatorName?: string | null
 }
 
-export function DiscoverCard({ route, waterLevel }: DiscoverCardProps) {
+export function DiscoverCard({ route, waterLevel, paddleCount, creatorName }: DiscoverCardProps) {
   const router = useRouter()
   const lat = route.putInLat
   const lng = route.putInLng
@@ -105,6 +107,19 @@ export function DiscoverCard({ route, waterLevel }: DiscoverCardProps) {
             </span>
           )}
         </div>
+
+        {/* Row 4: Paddle count + Creator */}
+        {(paddleCount !== undefined || creatorName) && (
+          <div className="flex items-center justify-between pt-1.5 border-t border-storm-grey/10 text-xs text-driftwood">
+            <span className="flex items-center gap-1">
+              <Waves className="w-3.5 h-3.5" />
+              {paddleCount === 0
+                ? 'Not yet paddled'
+                : `Paddled ${paddleCount} time${paddleCount !== 1 ? 's' : ''}`}
+            </span>
+            {creatorName && <span>by {creatorName}</span>}
+          </div>
+        )}
       </Card>
     </div>
   )

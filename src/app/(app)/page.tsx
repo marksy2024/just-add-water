@@ -81,7 +81,7 @@ export default async function DashboardPage() {
       bgTint: 'bg-kelp-green/10',
     },
     {
-      href: '/discover',
+      href: '/routes',
       icon: Search,
       label: 'Find a Paddle',
       hint: 'Discover new routes',

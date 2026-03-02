@@ -2,13 +2,13 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, CalendarDays, Map, Users, Search } from 'lucide-react'
+import { Home, CalendarDays, Map, Users, Compass } from 'lucide-react'
 
 const navItems = [
   { href: '/', icon: Home, label: 'Home' },
   { href: '/calendar', icon: CalendarDays, label: 'Calendar' },
   { href: '/routes', icon: Map, label: 'Routes' },
-  { href: '/discover', icon: Search, label: 'Discover' },
+  { href: '/conditions', icon: Compass, label: 'Conditions' },
   { href: '/group', icon: Users, label: 'Group' },
 ]
 

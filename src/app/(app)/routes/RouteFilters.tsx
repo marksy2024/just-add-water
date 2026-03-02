@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Search } from 'lucide-react'
 import { DiscoverCard } from '@/components/routes/DiscoverCard'
 import { EmptyState } from '@/components/ui/EmptyState'
 import type { WaterLevelData } from '@/lib/water-level'
@@ -18,9 +17,11 @@ interface SerializedRoute {
   bestSeasonNotes: string | null
   hubeauStationCode: string | null
   department: string | null
+  paddleCount: number
+  creatorName: string | null
 }
 
-interface DiscoverFiltersProps {
+interface RouteFiltersProps {
   routes: SerializedRoute[]
   waterLevels: Record<string, WaterLevelData>
 }
@@ -37,7 +38,7 @@ const DEPARTMENTS = [
   'Charente-Maritime',
 ] as const
 
-export function DiscoverFilters({ routes, waterLevels }: DiscoverFiltersProps) {
+export function RouteFilters({ routes, waterLevels }: RouteFiltersProps) {
   const [typeFilter, setTypeFilter] = useState<string>('All')
   const [deptFilter, setDeptFilter] = useState<string>('All')
 
@@ -51,13 +52,6 @@ export function DiscoverFilters({ routes, waterLevels }: DiscoverFiltersProps) {
 
   return (
     <>
-      {/* Header */}
-      <div className="flex items-center gap-2">
-        <Search className="w-5 h-5 text-atlantic-blue" />
-        <h2 className="text-lg font-bold text-deep-ocean">Discover</h2>
-        <span className="text-xs text-driftwood ml-auto">{filtered.length} routes</span>
-      </div>
-
       {/* Type filter chips */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
         {TYPE_FILTERS.map((type) => (
@@ -92,6 +86,9 @@ export function DiscoverFilters({ routes, waterLevels }: DiscoverFiltersProps) {
         ))}
       </div>
 
+      {/* Count */}
+      <p className="text-xs text-driftwood">{filtered.length} route{filtered.length !== 1 ? 's' : ''}</p>
+
       {/* Route cards */}
       <div className="space-y-3">
         {filtered.length === 0 ? (
@@ -109,6 +106,8 @@ export function DiscoverFilters({ routes, waterLevels }: DiscoverFiltersProps) {
                   ? waterLevels[route.hubeauStationCode] ?? null
                   : null
               }
+              paddleCount={route.paddleCount}
+              creatorName={route.creatorName}
             />
           ))
         )}

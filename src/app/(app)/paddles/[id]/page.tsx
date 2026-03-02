@@ -11,6 +11,7 @@ import { FloatPlanForm } from '@/components/paddles/FloatPlanForm'
 import { PaddlePhotos } from '@/components/paddles/PaddlePhotos'
 import { AddParticipants } from '@/components/paddles/AddParticipants'
 import { FoodSection } from '@/components/paddles/FoodSection'
+import { PaddleCommentForm } from '@/components/paddles/PaddleCommentForm'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { RouteMap } from '@/components/maps/RouteMap'
@@ -525,6 +526,8 @@ export default async function PaddleDetailPage({ params }: PageProps) {
             </p>
           </Card>
         )}
+
+        <PaddleCommentForm paddleId={paddle.id} />
       </section>
 
       {/* Photos Gallery */}

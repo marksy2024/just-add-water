@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { User, Plus } from 'lucide-react'
 import { AlertBell } from '@/components/layout/AlertBell'
@@ -32,7 +33,8 @@ export function Header() {
         {title ? (
           <h1 className="text-lg font-bold text-deep-ocean">{title}</h1>
         ) : (
-          <Link href="/" className="text-lg font-bold text-deep-ocean">
+          <Link href="/" className="flex items-center gap-2 text-lg font-bold text-deep-ocean">
+            <Image src="/logo.png" alt="Logo" width={28} height={28} className="rounded-md" />
             Just Add Water
           </Link>
         )}

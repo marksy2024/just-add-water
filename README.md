@@ -25,7 +25,6 @@ A paddling group companion app for logging paddles, sharing routes, tracking con
 - **Conditions Traffic Light** — Green/amber/red assessment based on wind, rain, temperature, and water level trends, plus "Best Paddle Today" recommendation
 - **GPX Import/Export** — Upload GPX files to create routes, download route GPX for GPS devices
 - **Photo EXIF GPS** — Automatic GPS extraction from uploaded photos, displayed as pins on route maps
-- **Strava Integration** — OAuth connect, automatic import of kayak/canoe activities via webhooks
 - **Badge Sharing** — Share earned badges to WhatsApp
 
 ## Tech Stack
@@ -84,10 +83,6 @@ RESEND_API_KEY=re_xxxxx
 EMAIL_FROM=Just Add Water <noreply@yourdomain.com>
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-# Optional: Strava integration
-STRAVA_CLIENT_ID=
-STRAVA_CLIENT_SECRET=
-STRAVA_VERIFY_TOKEN=
 ```
 
 ## Project Structure
@@ -107,13 +102,13 @@ src/
       paddles/          # CRUD + complete, RSVP, shuttle, float plan
       routes/           # CRUD + GPX export/import
       photos/           # Image upload with EXIF extraction
-      strava/           # OAuth callback, webhook, disconnect
+      photos/           # Image upload with EXIF extraction
   components/
     ui/                 # Shared UI (Card, Button, Input, Badge)
     maps/               # RouteMap (Leaflet)
     paddles/            # RSVPButtons, FloatPlanForm, FloatPlanCard
     routes/             # ConditionsCard, TrafficLight
-    profile/            # SignOutButton, StravaConnect
+    profile/            # SignOutButton, ProfilePhotoUpload, ChangePassword
   lib/
     auth.ts             # NextAuth configuration
     db.ts               # Prisma client
@@ -124,7 +119,6 @@ src/
     conditions.ts       # Traffic light assessment
     gpx.ts              # GPX parse/generate + Haversine distance
     exif.ts             # EXIF GPS extraction
-    strava.ts           # Strava OAuth + API client
 prisma/
   schema.prisma         # 18 models
   seed.ts               # Badge definitions (17 badges)

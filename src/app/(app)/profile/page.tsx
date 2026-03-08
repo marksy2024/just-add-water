@@ -6,8 +6,6 @@ import { WaveDividerSubtle } from '@/components/ui/WaveDivider'
 import { SignOutButton } from '@/components/profile/SignOutButton'
 import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload'
 import { ChangePassword } from '@/components/profile/ChangePassword'
-import { StravaConnect } from '@/components/profile/StravaConnect'
-import { getStravaAuthUrl } from '@/lib/strava'
 import Link from 'next/link'
 import { WhatsAppShare } from '@/components/ui/WhatsAppShare'
 import { Award, Flame, MapPin, UserPlus } from 'lucide-react'
@@ -142,14 +140,6 @@ export default async function ProfilePage() {
           <p className="text-xs text-driftwood mt-0.5">Member since {memberSince}</p>
         </div>
       </div>
-
-      {/* Strava Connection */}
-      <Card padding="sm">
-        <StravaConnect
-          isConnected={!!user?.stravaAthleteId}
-          authUrl={getStravaAuthUrl()}
-        />
-      </Card>
 
       {/* Personal Stats */}
       <div>

@@ -18,10 +18,6 @@ model User {
   emailVerified        DateTime? @map("email_verified")
   image                String?   @map("avatar_url")
   passwordHash         String?   @map("password_hash")
-  stravaAthleteId      BigInt?   @map("strava_athlete_id")
-  stravaAccessToken    String?   @map("strava_access_token")
-  stravaRefreshToken   String?   @map("strava_refresh_token")
-  stravaTokenExpiresAt DateTime? @map("strava_token_expires_at")
   createdAt            DateTime  @default(now()) @map("created_at")
 
   accounts           Account[]
@@ -184,7 +180,6 @@ model PaddleParticipant {
   userId          String   @map("user_id")
   role            String   @default("participant") // organiser, participant
   rsvp            String   @default("going") // going, not_going, maybe
-  stravaActivityId String? @map("strava_activity_id")
   distanceKm      Decimal? @map("distance_km") @db.Decimal(6, 2)
   durationMinutes Int?     @map("duration_minutes")
   joinedAt        DateTime @default(now()) @map("joined_at")

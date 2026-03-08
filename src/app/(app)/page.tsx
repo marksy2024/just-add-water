@@ -20,7 +20,10 @@ export default async function DashboardPage() {
       where: {
         userId,
         rsvp: 'going',
-        paddle: { status: 'planned' },
+        paddle: {
+          status: 'planned',
+          date: { gte: new Date(new Date().toISOString().split('T')[0]) },
+        },
       },
       select: {
         paddleId: true,

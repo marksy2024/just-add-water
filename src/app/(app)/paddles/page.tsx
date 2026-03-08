@@ -32,12 +32,14 @@ export default async function PaddlesPage() {
     orderBy: { date: 'desc' },
   })
 
+  const today = new Date(new Date().toISOString().split('T')[0])
+
   const upcomingPaddles = paddles.filter(
-    (p) => p.status === 'planned' || p.status === 'active'
+    (p) => (p.status === 'planned' || p.status === 'active') && new Date(p.date) >= today
   ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
   const pastPaddles = paddles.filter(
-    (p) => p.status === 'completed'
+    (p) => p.status === 'completed' || ((p.status === 'planned' || p.status === 'active') && new Date(p.date) < today)
   )
 
   return (

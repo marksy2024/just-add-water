@@ -27,6 +27,6 @@ export const config = {
      * - login pages
      * - join/invite pages (public)
      */
-    '/((?!api/auth|_next/static|_next/image|favicon.ico|icon|manifest|login|join).*)',
+    '/((?!api/auth|_next/static|_next/image|favicon.ico|icon|manifest|logo.png|login|join).*)',
   ],
 }

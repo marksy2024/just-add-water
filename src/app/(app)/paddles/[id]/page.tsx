@@ -12,6 +12,7 @@ import { PaddlePhotos } from '@/components/paddles/PaddlePhotos'
 import { AddParticipants } from '@/components/paddles/AddParticipants'
 import { FoodSection } from '@/components/paddles/FoodSection'
 import { PaddleComments } from '@/components/paddles/PaddleComments'
+import { MyParticipationActions } from '@/components/paddles/MyParticipationActions'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { RouteMap } from '@/components/maps/RouteMap'
@@ -315,11 +316,17 @@ export default async function PaddleDetailPage({ params }: PageProps) {
                       )}
                     </div>
                   </div>
-                  {p.distanceKm && (
+                  {p.userId === userId ? (
+                    <MyParticipationActions
+                      paddleId={paddle.id}
+                      participantId={p.id}
+                      distanceKm={p.distanceKm ? Number(p.distanceKm) : null}
+                    />
+                  ) : p.distanceKm ? (
                     <span className="stat-number text-sm">
                       {formatDistance(Number(p.distanceKm))}
                     </span>
-                  )}
+                  ) : null}
                 </div>
               </Card>
             ))}

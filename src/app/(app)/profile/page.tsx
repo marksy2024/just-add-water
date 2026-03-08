@@ -8,7 +8,7 @@ import { ProfilePhotoUpload } from '@/components/profile/ProfilePhotoUpload'
 import { ChangePassword } from '@/components/profile/ChangePassword'
 import Link from 'next/link'
 import { WhatsAppShare } from '@/components/ui/WhatsAppShare'
-import { Award, Flame, MapPin, UserPlus } from 'lucide-react'
+import { Award, ChevronRight, Flame, MapPin, Waves, UserPlus } from 'lucide-react'
 
 // Avatar colours — deterministic per user
 const avatarColors = [
@@ -52,6 +52,7 @@ export default async function ProfilePage() {
         paddle: {
           select: {
             id: true,
+            title: true,
             date: true,
             status: true,
             distanceKm: true,
@@ -60,6 +61,7 @@ export default async function ProfilePage() {
           },
         },
       },
+      orderBy: { paddle: { date: 'desc' } },
     }),
     prisma.userStreak.findFirst({
       where: { userId },
@@ -232,6 +234,63 @@ export default async function ProfilePage() {
           </Card>
         )}
       </div>
+
+      {/* My Paddles */}
+      {completedParticipations.length > 0 && (
+        <>
+          <WaveDividerSubtle />
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Waves className="w-4 h-4 text-atlantic-blue" />
+              <h2 className="text-sm font-semibold text-driftwood uppercase tracking-wide">
+                My Paddles
+              </h2>
+            </div>
+            <div className="space-y-2">
+              {completedParticipations.slice(0, 10).map((p) => {
+                const km = Number(p.distanceKm) || Number(p.paddle?.distanceKm) || 0
+                return (
+                  <Link key={p.paddle.id} href={`/paddles/${p.paddle.id}`}>
+                    <Card hover padding="sm">
+                      <div className="flex items-center justify-between">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-deep-ocean truncate">
+                            {p.paddle.title}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-driftwood">
+                            <span>{formatDate(p.paddle.date)}</span>
+                            {p.paddle.route && (
+                              <>
+                                <span>&middot;</span>
+                                <span className="truncate">{p.paddle.route.name}</span>
+                              </>
+                            )}
+                            {km > 0 && (
+                              <>
+                                <span>&middot;</span>
+                                <span>{formatDistance(km)}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-driftwood shrink-0" />
+                      </div>
+                    </Card>
+                  </Link>
+                )
+              })}
+            </div>
+            {completedParticipations.length > 10 && (
+              <Link
+                href="/paddles"
+                className="block text-center text-sm font-semibold text-atlantic-blue hover:text-deep-ocean mt-3 transition-colors"
+              >
+                View all paddles
+              </Link>
+            )}
+          </div>
+        </>
+      )}
 
       <WaveDividerSubtle />
 
